@@ -1,30 +1,28 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:living_grace/data/repositories/mock_auth_repository.dart';
 import 'package:living_grace/main.dart';
+import 'package:living_grace/presentation/controllers/auth_controller.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('muestra splash y luego el login', (tester) async {
+    final authController = AuthController(
+      authRepository: MockAuthRepository(
+        delay: const Duration(milliseconds: 10),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      LivingGraceApp(authController: authController),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(find.text('Cargando...'), findsOneWidget);
+    expect(find.text('Grace'), findsWidgets);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 2300));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Iniciar Sesión'), findsOneWidget);
+    expect(find.text('E-mail o Usuario'), findsOneWidget);
   });
 }
