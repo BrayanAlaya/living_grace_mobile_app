@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
 import 'data/repositories/mock_auth_repository.dart';
+import 'data/repositories/mock_register_repository.dart';
 import 'presentation/app_shell.dart';
 import 'presentation/controllers/auth_controller.dart';
+import 'presentation/controllers/register_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,16 +14,27 @@ void main() {
   final authRepository = MockAuthRepository();
   final authController = AuthController(authRepository: authRepository);
 
-  runApp(LivingGraceApp(authController: authController));
+  final registerRepository = MockRegisterRepository();
+  final registerController =
+      RegisterController(registerRepository: registerRepository);
+
+  runApp(
+    LivingGraceApp(
+      authController: authController,
+      registerController: registerController,
+    ),
+  );
 }
 
 class LivingGraceApp extends StatelessWidget {
   const LivingGraceApp({
     super.key,
     required this.authController,
+    required this.registerController,
   });
 
   final AuthController authController;
+  final RegisterController registerController;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +42,10 @@ class LivingGraceApp extends StatelessWidget {
       title: 'Living Grace',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: AppShell(authController: authController),
+      home: AppShell(
+        authController: authController,
+        registerController: registerController,
+      ),
     );
   }
 }
