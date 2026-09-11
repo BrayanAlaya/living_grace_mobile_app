@@ -21,3 +21,9 @@ class NetworkFailure extends AuthFailure {
   const NetworkFailure()
       : super('No pudimos conectar. Intenta de nuevo más tarde.');
 }
+
+class AuthUnexpectedFailure extends AuthFailure {
+  const AuthUnexpectedFailure([
+    super.message = 'No pudimos iniciar sesión. Intenta de nuevo.',
+  ]);
+}

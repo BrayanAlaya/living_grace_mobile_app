@@ -57,6 +57,7 @@ class AuthController extends ChangeNotifier {
   }
 
   void logout() {
+    _authRepository.logout();
     user = null;
     failure = null;
     status = AuthStatus.idle;

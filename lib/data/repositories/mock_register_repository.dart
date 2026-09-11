@@ -14,6 +14,7 @@ class MockRegisterRepository implements RegisterRepository {
 
   static const _minPasswordLength = 6;
   static final _emailPattern = RegExp(r'^[\w.\-]+@([\w\-]+\.)+[\w\-]{2,}$');
+  static final _peruPhonePattern = RegExp(r'^9\d{8}$');
 
   // "Base de datos" en memoria de correos ya registrados.
   final Set<String> _registeredEmails = {'demo@livinggrace.com'};
@@ -24,20 +25,30 @@ class MockRegisterRepository implements RegisterRepository {
   ) async {
     await Future<void>.delayed(delay);
 
-    final displayName = data.displayName.trim();
-    final identifier = data.identifier.trim();
+    final firstName = data.firstName.trim();
+    final lastName = data.lastName.trim();
+    final phone = data.phone.trim();
+    final birthDate = data.birthDate.trim();
+    final email = data.email.trim();
     final password = data.password;
     final confirmPassword = data.confirmPassword;
 
-    if (displayName.isEmpty ||
-        identifier.isEmpty ||
+    if (firstName.isEmpty ||
+        lastName.isEmpty ||
+        phone.isEmpty ||
+        birthDate.isEmpty ||
+        email.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
       return (user: null, failure: const EmptyRegisterFieldsFailure());
     }
 
-    if (!_emailPattern.hasMatch(identifier)) {
+    if (!_emailPattern.hasMatch(email)) {
       return (user: null, failure: const InvalidEmailFailure());
+    }
+
+    if (!_peruPhonePattern.hasMatch(phone)) {
+      return (user: null, failure: const InvalidPhoneFailure());
     }
 
     if (password.length < _minPasswordLength) {
@@ -48,7 +59,7 @@ class MockRegisterRepository implements RegisterRepository {
       return (user: null, failure: const PasswordMismatchFailure());
     }
 
-    final normalizedEmail = identifier.toLowerCase();
+    final normalizedEmail = email.toLowerCase();
     if (_registeredEmails.contains(normalizedEmail)) {
       return (user: null, failure: const EmailAlreadyRegisteredFailure());
     }
@@ -59,7 +70,7 @@ class MockRegisterRepository implements RegisterRepository {
       user: User(
         id: 'usr_${_registeredEmails.length.toString().padLeft(3, '0')}',
         email: normalizedEmail,
-        displayName: displayName,
+        displayName: '$firstName $lastName'.trim(),
       ),
       failure: null,
     );

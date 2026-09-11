@@ -23,8 +23,11 @@ class RegisterController extends ChangeNotifier {
   User? user;
 
   Future<bool> register({
-    required String displayName,
-    required String identifier,
+    required String firstName,
+    required String lastName,
+    required String phone,
+    required String birthDate,
+    required String email,
     required String password,
     required String confirmPassword,
   }) async {
@@ -34,8 +37,11 @@ class RegisterController extends ChangeNotifier {
 
     final result = await _registerRepository.register(
       RegisterData(
-        displayName: displayName,
-        identifier: identifier,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        birthDate: birthDate,
+        email: email,
         password: password,
         confirmPassword: confirmPassword,
       ),

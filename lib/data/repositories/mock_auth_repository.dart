@@ -44,4 +44,7 @@ class MockAuthRepository implements AuthRepository {
       failure: null,
     );
   }
+
+  @override
+  void logout() {}
 }

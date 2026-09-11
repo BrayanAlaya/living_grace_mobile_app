@@ -65,17 +65,23 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  Future<void> _handleRegister(
-    String displayName,
-    String identifier,
-    String password,
-    String confirmPassword,
-  ) async {
+  Future<void> _handleRegister({
+    required String firstName,
+    required String lastName,
+    required String phone,
+    required String birthDate,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
     setState(() => _view = _AppView.registrationLoading);
 
     final success = await _register.register(
-      displayName: displayName,
-      identifier: identifier,
+      firstName: firstName,
+      lastName: lastName,
+      phone: phone,
+      birthDate: birthDate,
+      email: email,
       password: password,
       confirmPassword: confirmPassword,
     );

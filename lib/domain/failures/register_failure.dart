@@ -14,9 +14,14 @@ class InvalidEmailFailure extends RegisterFailure {
       : super('Ingresa un correo electrónico válido.');
 }
 
+class InvalidPhoneFailure extends RegisterFailure {
+  const InvalidPhoneFailure()
+      : super('Ingresa un celular peruano de 9 dígitos.');
+}
+
 class WeakPasswordFailure extends RegisterFailure {
   const WeakPasswordFailure()
-      : super('La contraseña debe tener al menos 6 caracteres.');
+      : super('La contraseña debe tener al menos 8 caracteres.');
 }
 
 class PasswordMismatchFailure extends RegisterFailure {
@@ -32,4 +37,14 @@ class EmailAlreadyRegisteredFailure extends RegisterFailure {
 class RegisterNetworkFailure extends RegisterFailure {
   const RegisterNetworkFailure()
       : super('No pudimos conectar. Intenta de nuevo más tarde.');
+}
+
+class RegisterValidationFailure extends RegisterFailure {
+  const RegisterValidationFailure(super.message);
+}
+
+class RegisterUnexpectedFailure extends RegisterFailure {
+  const RegisterUnexpectedFailure([
+    super.message = 'No pudimos crear la cuenta. Intenta de nuevo.',
+  ]);
 }
