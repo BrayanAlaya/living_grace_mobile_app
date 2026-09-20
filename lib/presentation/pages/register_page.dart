@@ -6,8 +6,6 @@ import '../../core/layouts/auth_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/entities/register_data.dart';
 import '../../domain/failures/register_failure.dart';
-import '../../register/ministry/ministry_catalog.dart';
-import '../../register/register_validator.dart';
 import '../widgets/app_select_field.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
@@ -15,16 +13,12 @@ import '../widgets/primary_button.dart';
 class RegisterPage extends StatefulWidget {
   const RegisterPage({
     super.key,
-    required this.catalog,
-    required this.validator,
     required this.onSubmit,
     this.failure,
     this.onLogin,
     this.initialStep = 0,
   });
 
-  final MinistryCatalog catalog;
-  final RegisterValidator validator;
   final Future<void> Function(RegisterData data) onSubmit;
   final RegisterFailure? failure;
   final VoidCallback? onLogin;
@@ -115,20 +109,42 @@ class _RegisterPageState extends State<RegisterPage> {
     });
   }
 
-  bool get _canContinue => widget.validator.isPersonalDataComplete(
-        firstName: _firstNameController.text,
-        lastName: _lastNameController.text,
-        phone: _phoneController.text,
-        birthDate: _birthDate == null ? '' : _apiDate(_birthDate!),
-        email: _emailController.text,
-      );
+  bool get _canContinue {
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    return _firstNameController.text.trim().isNotEmpty &&
+        _lastNameController.text.trim().isNotEmpty &&
+        RegExp(r'^9\d{8}$').hasMatch(phone) &&
+        _birthDate != null &&
+        RegExp(r'^[\w.\-]+@([\w\-]+\.)+[\w\-]{2,}$').hasMatch(email);
+  }
 
-  bool get _canRegister => widget.validator.isCredentialsComplete(
-        ministryId: _ministryId,
-        serviceAreaId: _serviceAreaId,
-        password: _passwordController.text,
-        confirmPassword: _confirmPasswordController.text,
-      );
+  bool get _canRegister {
+    return _ministryId != null &&
+        _ministryId!.isNotEmpty &&
+        _serviceAreaId != null &&
+        _serviceAreaId!.isNotEmpty &&
+        _passwordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty;
+  }
+
+  List<AppSelectOption<String>> _areas() {
+    if (_ministryId == 'alabanza') {
+      return const [
+        AppSelectOption(value: 'voces', label: 'Voces'),
+        AppSelectOption(value: 'instrumentos', label: 'Instrumentos'),
+        AppSelectOption(value: 'direccion', label: 'Dirección'),
+      ];
+    }
+    if (_ministryId == 'produccion') {
+      return const [
+        AppSelectOption(value: 'audio', label: 'Audio'),
+        AppSelectOption(value: 'video', label: 'Video'),
+        AppSelectOption(value: 'iluminacion', label: 'Iluminación'),
+      ];
+    }
+    return const [];
+  }
 
   Future<void> _submit() async {
     await widget.onSubmit(
@@ -275,7 +291,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _credentialsFields() {
-    final areas = widget.catalog.areasFor(_ministryId);
     final ministrySelected = _ministryId != null;
 
     return Column(
@@ -285,9 +300,9 @@ class _RegisterPageState extends State<RegisterPage> {
           label: 'Ministerio',
           placeholder: 'Elige un ministerio',
           value: _ministryId,
-          options: [
-            for (final ministry in widget.catalog.ministries)
-              AppSelectOption(value: ministry.id, label: ministry.name),
+          options: const [
+            AppSelectOption(value: 'alabanza', label: 'Alabanza'),
+            AppSelectOption(value: 'produccion', label: 'Producción'),
           ],
           onChanged: (id) {
             setState(() {
@@ -304,10 +319,7 @@ class _RegisterPageState extends State<RegisterPage> {
               : 'Selecciona un ministerio',
           value: _serviceAreaId,
           enabled: ministrySelected,
-          options: [
-            for (final area in areas)
-              AppSelectOption(value: area.id, label: area.name),
-          ],
+          options: _areas(),
           onChanged: (id) => setState(() => _serviceAreaId = id),
         ),
         const SizedBox(height: 16),
