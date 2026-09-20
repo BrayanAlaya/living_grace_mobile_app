@@ -16,26 +16,30 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onPressed != null && !isLoading;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(40),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.28),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
+          if (enabled)
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.28),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
         ],
       ),
       child: SizedBox(
         width: double.infinity,
         height: 54,
         child: FilledButton(
-          onPressed: isLoading ? null : onPressed,
+          onPressed: enabled ? onPressed : null,
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.black,
             foregroundColor: AppColors.white,
-            disabledBackgroundColor: AppColors.black,
+            disabledBackgroundColor: const Color(0xFFD6D6D6),
+            disabledForegroundColor: AppColors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(40),
             ),

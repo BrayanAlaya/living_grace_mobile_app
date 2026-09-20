@@ -5,6 +5,8 @@ class RegisterData {
     required this.phone,
     required this.birthDate,
     required this.email,
+    required this.ministryId,
+    required this.serviceAreaId,
     required this.password,
     required this.confirmPassword,
   });
@@ -14,6 +16,8 @@ class RegisterData {
   final String phone;
   final String birthDate;
   final String email;
+  final String ministryId;
+  final String serviceAreaId;
   final String password;
   final String confirmPassword;
 }

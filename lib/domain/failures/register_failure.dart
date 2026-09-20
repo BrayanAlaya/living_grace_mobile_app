@@ -19,6 +19,11 @@ class InvalidPhoneFailure extends RegisterFailure {
       : super('Ingresa un celular peruano de 9 dígitos.');
 }
 
+class MissingMinistryFailure extends RegisterFailure {
+  const MissingMinistryFailure()
+      : super('Selecciona un ministerio y un área de servicio.');
+}
+
 class WeakPasswordFailure extends RegisterFailure {
   const WeakPasswordFailure()
       : super('La contraseña debe tener al menos 8 caracteres.');

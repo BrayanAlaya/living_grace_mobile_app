@@ -4,12 +4,17 @@ import 'core/config/api_config.dart';
 import 'core/network/api_client.dart';
 import 'core/session/token_store.dart';
 import 'core/theme/app_theme.dart';
-import 'data/datasources/living_grace_api.dart';
-import 'data/repositories/api_auth_repository.dart';
-import 'data/repositories/api_register_repository.dart';
+import 'login/login_api.dart';
+import 'login/login_controller.dart';
+import 'login/login_user_mapper.dart';
+import 'login/login_validator.dart';
 import 'presentation/app_shell.dart';
-import 'presentation/controllers/auth_controller.dart';
-import 'presentation/controllers/register_controller.dart';
+import 'register/ministry/alabanza_ministry.dart';
+import 'register/ministry/ministry_catalog.dart';
+import 'register/ministry/produccion_ministry.dart';
+import 'register/register_api.dart';
+import 'register/register_controller.dart';
+import 'register/register_validator.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,22 +25,32 @@ void main() {
     baseUrl: ApiConfig.baseUrl,
     tokenStore: tokenStore,
   );
-  final api = LivingGraceApi(client: apiClient);
 
-  final authRepository = ApiAuthRepository(
-    api: api,
+  // Login: solo S — cada clase concreta tiene una responsabilidad.
+  final loginController = LoginController(
+    validator: LoginValidator(),
+    api: LoginApi(client: apiClient),
+    mapper: LoginUserMapper(),
     tokenStore: tokenStore,
   );
-  final authController = AuthController(authRepository: authRepository);
 
-  final registerRepository = ApiRegisterRepository(api: api);
-  final registerController =
-      RegisterController(registerRepository: registerRepository);
+  // Register: S + O — ministerios nuevos se agregan sin tocar el formulario.
+  final ministryCatalog = const MinistryCatalog([
+    AlabanzaMinistry(),
+    ProduccionMinistry(),
+  ]);
+  final registerValidator = RegisterValidator();
+  final registerController = RegisterController(
+    validator: registerValidator,
+    api: RegisterApi(client: apiClient),
+  );
 
   runApp(
     LivingGraceApp(
-      authController: authController,
+      loginController: loginController,
       registerController: registerController,
+      ministryCatalog: ministryCatalog,
+      registerValidator: registerValidator,
     ),
   );
 }
@@ -43,12 +58,16 @@ void main() {
 class LivingGraceApp extends StatelessWidget {
   const LivingGraceApp({
     super.key,
-    required this.authController,
+    required this.loginController,
     required this.registerController,
+    required this.ministryCatalog,
+    required this.registerValidator,
   });
 
-  final AuthController authController;
+  final LoginController loginController;
   final RegisterController registerController;
+  final MinistryCatalog ministryCatalog;
+  final RegisterValidator registerValidator;
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +76,10 @@ class LivingGraceApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       home: AppShell(
-        authController: authController,
+        loginController: loginController,
         registerController: registerController,
+        ministryCatalog: ministryCatalog,
+        registerValidator: registerValidator,
       ),
     );
   }
