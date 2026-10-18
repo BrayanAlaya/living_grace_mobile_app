@@ -7,6 +7,7 @@ import '../../domain/failures/auth_failure.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
+/// S — Single Responsibility: solo pinta el formulario de login.
 class LoginPage extends StatefulWidget {
   const LoginPage({
     super.key,
