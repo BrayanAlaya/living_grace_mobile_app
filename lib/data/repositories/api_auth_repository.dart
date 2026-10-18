@@ -29,6 +29,15 @@ class ApiAuthRepository implements AuthRepository {
       return (user: null, failure: const EmptyCredentialsFailure());
     }
 
+    if (password.length > 128) {
+      return (
+        user: null,
+        failure: const AuthUnexpectedFailure(
+          'La contraseña no puede superar 128 caracteres.',
+        ),
+      );
+    }
+
     try {
       final token = await _remoteDataSource.login(
         LoginRequestDto(identifier: identifier, password: password),
@@ -43,14 +52,14 @@ class ApiAuthRepository implements AuthRepository {
         user: User(
           id: identifier,
           email: identifier,
-          displayName: identifier,
+          displayName: _displayName(identifier),
         ),
         failure: null,
       );
     } on AuthUnauthorizedException {
       return (user: null, failure: const InvalidCredentialsFailure());
-    } on AuthValidationException {
-      return (user: null, failure: const InvalidCredentialsFailure());
+    } on AuthValidationException catch (error) {
+      return (user: null, failure: _mapValidationFailure(error.message));
     } on AuthNetworkException {
       return (user: null, failure: const NetworkFailure());
     } on AuthServerException {
@@ -60,4 +69,25 @@ class ApiAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() => _tokenStore.clear();
+
+  AuthFailure _mapValidationFailure(String? message) {
+    final text = message?.trim() ?? '';
+    if (text.isEmpty) return const InvalidCredentialsFailure();
+
+    final normalized = text.toLowerCase();
+    if (normalized.contains('credential') ||
+        normalized.contains('password') ||
+        normalized.contains('identifier') ||
+        normalized.contains('incorrect')) {
+      return const InvalidCredentialsFailure();
+    }
+
+    return AuthUnexpectedFailure(text);
+  }
+
+  String _displayName(String identifier) {
+    if (!identifier.contains('@')) return identifier;
+    final local = identifier.split('@').first.trim();
+    return local.isEmpty ? identifier : local;
+  }
 }

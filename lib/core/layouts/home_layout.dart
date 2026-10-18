@@ -1,39 +1,54 @@
 import 'package:flutter/material.dart';
 
+import '../../presentation/widgets/panel_drawer.dart';
+import '../../presentation/widgets/panel_header.dart';
 import '../theme/app_colors.dart';
 import 'app_layout.dart';
 
-/// Layout del home: distinto al de auth (preparado para el diseño futuro).
+/// Layout del panel (home / ajustes / demás secciones autenticadas).
+/// Incluye el header con menú lateral y acceso a perfil/ajustes.
 class HomeLayout extends StatelessWidget {
   const HomeLayout({
     super.key,
     required this.child,
-    this.title,
+    required this.currentDestinationId,
+    required this.onDestinationSelected,
+    required this.onProfilePressed,
+    this.profileImageUrl,
   });
 
   final Widget child;
-  final String? title;
+  final String currentDestinationId;
+  final ValueChanged<String> onDestinationSelected;
+  final VoidCallback onProfilePressed;
+  final String? profileImageUrl;
 
   @override
   Widget build(BuildContext context) {
     return AppLayout(
       backgroundColor: AppColors.white,
       statusBarBrightness: Brightness.dark,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (title != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-              child: Text(
-                title!,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-          Expanded(child: child),
-        ],
+      child: Scaffold(
+        backgroundColor: AppColors.white,
+        drawer: PanelDrawer(
+          currentDestinationId: currentDestinationId,
+          onDestinationSelected: onDestinationSelected,
+        ),
+        body: Builder(
+          builder: (context) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PanelHeader(
+                  onMenuPressed: () => Scaffold.of(context).openDrawer(),
+                  onProfilePressed: onProfilePressed,
+                  profileImageUrl: profileImageUrl,
+                ),
+                Expanded(child: child),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

@@ -69,4 +69,26 @@ void main() {
 
     expect(result.failure, isA<NetworkFailure>());
   });
+
+  test('422 de validación conserva el mensaje del servidor', () async {
+    final repository = ApiAuthRepository(
+      remoteDataSource: _FakeAuthRemote(
+        (_) async => throw const AuthValidationException(
+          'String should have at most 128 characters',
+        ),
+      ),
+      tokenStore: InMemoryTokenStore(),
+    );
+
+    final result = await repository.login(
+      const AuthCredentials(identifier: 'demo', password: 'secret'),
+    );
+
+    expect(result.user, isNull);
+    expect(result.failure, isA<AuthUnexpectedFailure>());
+    expect(
+      result.failure?.message,
+      'String should have at most 128 characters',
+    );
+  });
 }
