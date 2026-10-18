@@ -56,7 +56,8 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await _authRepository.logout();
     user = null;
     failure = null;
     status = AuthStatus.idle;

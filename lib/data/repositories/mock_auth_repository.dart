@@ -44,4 +44,7 @@ class MockAuthRepository implements AuthRepository {
       failure: null,
     );
   }
+
+  @override
+  Future<void> logout() async {}
 }

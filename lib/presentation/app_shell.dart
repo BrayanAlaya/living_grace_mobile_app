@@ -45,8 +45,9 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  void _handleLogout() {
-    _auth.logout();
+  Future<void> _handleLogout() async {
+    await _auth.logout();
+    if (!mounted) return;
     setState(() => _view = _AppView.login);
   }
 
