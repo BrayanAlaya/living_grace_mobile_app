@@ -21,6 +21,7 @@ import 'register/ministry/produccion_ministry.dart';
 import 'register/register_api.dart';
 import 'register/register_controller.dart';
 import 'register/register_validator.dart';
+import 'rehearsals/rehearsal_api.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,6 +67,7 @@ void main() {
       registerController: registerController,
       ministryCatalog: ministryCatalog,
       registerValidator: registerValidator,
+      rehearsalApi: RehearsalApi(tokenStore: tokenStore),
     ),
   );
 }
@@ -79,6 +81,7 @@ class LivingGraceApp extends StatelessWidget {
     required this.registerController,
     required this.ministryCatalog,
     required this.registerValidator,
+    this.rehearsalApi,
   });
 
   final AuthController authController;
@@ -87,6 +90,7 @@ class LivingGraceApp extends StatelessWidget {
   final RegisterController registerController;
   final MinistryCatalog ministryCatalog;
   final RegisterValidator registerValidator;
+  final RehearsalApi? rehearsalApi;
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +105,8 @@ class LivingGraceApp extends StatelessWidget {
         registerController: registerController,
         ministryCatalog: ministryCatalog,
         registerValidator: registerValidator,
+        rehearsalApi:
+            rehearsalApi ?? RehearsalApi(tokenStore: InMemoryTokenStore()),
       ),
     );
   }

@@ -4,7 +4,7 @@ import '../domain/entities/register_data.dart';
 import '../register/ministry/ministry_catalog.dart';
 import '../register/register_controller.dart';
 import '../register/register_validator.dart';
-import 'admin/admin_catalog.dart';
+import '../rehearsals/rehearsal_api.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/rehearsal_form_controller.dart';
@@ -46,6 +46,7 @@ class AppShell extends StatefulWidget {
     required this.registerController,
     required this.ministryCatalog,
     required this.registerValidator,
+    required this.rehearsalApi,
   });
 
   final AuthController authController;
@@ -54,6 +55,7 @@ class AppShell extends StatefulWidget {
   final RegisterController registerController;
   final MinistryCatalog ministryCatalog;
   final RegisterValidator registerValidator;
+  final RehearsalApi rehearsalApi;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -257,49 +259,17 @@ class _AppShellState extends State<AppShell> {
         onLogin: _goToLogin,
       ),
       _AppView.home => HomePage(
-        user: _auth.user!,
-        onOpenSettings: _goToSettings,
-        onDestinationSelected: _onPanelDestinationSelected,
-      ),
-      _AppView.settings => _settingsPage(),
-      _AppView.profile => ProfilePage(
-        headerTitle: _auth.user!.displayName,
-        isLoading:
-            _profile.status != ProfileStatus.ready &&
-            _profile.status != ProfileStatus.failure,
-        failure: _profile.status == ProfileStatus.failure
-            ? _profile.failure
-            : null,
-        data: _profile.profile == null
-            ? null
-            : ProfileViewMapper.map(
-                _profile.profile!,
-                username: _sessionUsername(),
-              ),
-        onBack: _goToSettings,
-        onRetry: _profile.load,
-        onEdit: () => _showSnack('Edición de perfil próximamente'),
-        onEditPhoto: () => _showSnack('Foto de perfil próximamente'),
-      ),
-      _AppView.admin =>
-        _isAdmin
-            ? AdminPanelPage(
-                greetingName: _greetingName(),
-                onBack: _goToSettings,
-                onItemSelected: _onAdminItem,
-              )
-            : _settingsPage(),
-      _AppView.scheduleRehearsal =>
-        _isAdmin
-            ? CreateRehearsalPage(
-                controller: widget.rehearsalFormController,
-                onBack: _backToAdmin,
-                onCreated: () {
-                  _backToAdmin();
-                  _showSnack('Ensayo programado.');
-                },
-              )
-            : _settingsPage(),
+          user: _auth.user!,
+          onOpenSettings: _goToSettings,
+          onDestinationSelected: _onPanelDestinationSelected,
+          rehearsalApi: widget.rehearsalApi,
+        ),
+      _AppView.settings => SettingsPage(
+          user: _auth.user!,
+          onLogout: _handleLogout,
+          onOpenSettings: _goToSettings,
+          onDestinationSelected: _onPanelDestinationSelected,
+        ),
       _AppView.login => LoginPage(
         failure: _auth.failure,
         onSubmit: _handleLogin,
