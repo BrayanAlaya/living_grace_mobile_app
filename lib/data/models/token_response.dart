@@ -1,11 +1,15 @@
+import '../../domain/entities/user_role.dart';
+
 class TokenResponse {
   const TokenResponse({
     required this.accessToken,
     this.tokenType = 'bearer',
+    this.role = UserRole.admin,
   });
 
   final String accessToken;
   final String tokenType;
+  final UserRole role;
 
   factory TokenResponse.fromJson(Map<String, dynamic> json) {
     final accessToken = json['access_token'];
@@ -18,6 +22,7 @@ class TokenResponse {
       tokenType: (json['token_type'] as String?)?.trim().isNotEmpty == true
           ? json['token_type'] as String
           : 'bearer',
+      role: UserRole.fromId(json['idRol']),
     );
   }
 }

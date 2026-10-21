@@ -17,6 +17,7 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.inputFormatters,
     this.maxLength,
+    this.maxLines = 1,
   });
 
   final String label;
@@ -30,6 +31,7 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final List<TextInputFormatter>? inputFormatters;
   final int? maxLength;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +57,8 @@ class AppTextField extends StatelessWidget {
           onTap: onTap,
           inputFormatters: inputFormatters,
           maxLength: maxLength,
-          style: const TextStyle(
-            fontSize: 15,
-            color: AppColors.black,
-          ),
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 15, color: AppColors.black),
           decoration: InputDecoration(
             filled: true,
             fillColor: AppColors.inputFill,

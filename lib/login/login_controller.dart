@@ -8,12 +8,7 @@ import 'login_api.dart';
 import 'login_user_mapper.dart';
 import 'login_validator.dart';
 
-enum LoginStatus {
-  idle,
-  authenticating,
-  authenticated,
-  failure,
-}
+enum LoginStatus { idle, authenticating, authenticated, failure }
 
 /// S — Single Responsibility: solo orquesta el caso de uso de login.
 ///
@@ -69,6 +64,7 @@ class LoginController extends ChangeNotifier {
       user = mapper.fromLogin(
         identifier: identifier.trim(),
         accessToken: token.accessToken,
+        role: token.role,
       );
       status = LoginStatus.authenticated;
       failure = null;

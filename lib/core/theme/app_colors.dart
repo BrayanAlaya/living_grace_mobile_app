@@ -8,5 +8,8 @@ abstract final class AppColors {
   static const Color muted = Color(0xFFB0B0B0);
   static const Color error = Color(0xFFE53935);
   static const Color link = Color(0xFF1565C0);
+  static const Color accent = Color(0xFF4E5BFF);
+  static const Color success = Color(0xFF2EAD4B);
+  static const Color warning = Color(0xFFF5A524);
   static const Color footerText = Color(0xFF8A8A8A);
 }

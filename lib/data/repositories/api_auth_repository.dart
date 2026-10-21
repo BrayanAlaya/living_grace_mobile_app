@@ -53,6 +53,7 @@ class ApiAuthRepository implements AuthRepository {
           id: identifier,
           email: identifier,
           displayName: _displayName(identifier),
+          role: token.role,
         ),
         failure: null,
       );

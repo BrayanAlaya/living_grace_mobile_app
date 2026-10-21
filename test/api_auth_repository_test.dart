@@ -6,6 +6,7 @@ import 'package:living_grace/data/models/token_response_dto.dart';
 import 'package:living_grace/data/repositories/api_auth_repository.dart';
 import 'package:living_grace/data/session/in_memory_token_store.dart';
 import 'package:living_grace/domain/entities/auth_credentials.dart';
+import 'package:living_grace/domain/entities/user_role.dart';
 import 'package:living_grace/domain/failures/auth_failure.dart';
 
 class _FakeAuthRemote implements AuthRemoteDataSource {
@@ -36,7 +37,27 @@ void main() {
 
     expect(result.failure, isNull);
     expect(result.user?.email, 'demo@livinggrace.com');
+    expect(result.user?.role, UserRole.admin);
     expect(await store.readAccessToken(), 'tok_123');
+  });
+
+  test('idRol 2 deja la sesión como usuario', () async {
+    final repository = ApiAuthRepository(
+      remoteDataSource: _FakeAuthRemote(
+        (_) async => const TokenResponseDto(
+          accessToken: 'tok_user',
+          role: UserRole.user,
+        ),
+      ),
+      tokenStore: InMemoryTokenStore(),
+    );
+
+    final result = await repository.login(
+      const AuthCredentials(identifier: 'ana', password: 'secret123'),
+    );
+
+    expect(result.failure, isNull);
+    expect(result.user?.role, UserRole.user);
   });
 
   test('credenciales inválidas mapean a InvalidCredentialsFailure', () async {

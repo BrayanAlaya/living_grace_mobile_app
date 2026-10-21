@@ -1,16 +1,19 @@
 import 'dart:convert';
 
 import '../domain/entities/user.dart';
+import '../domain/entities/user_role.dart';
 
 /// S — Single Responsibility: solo convierte el token/identificador en User.
 class LoginUserMapper {
   User fromLogin({
     required String identifier,
     required String accessToken,
+    UserRole role = UserRole.admin,
   }) {
     final claims = _decodeJwtPayload(accessToken);
     final email = _stringClaim(claims, const ['email']) ?? identifier;
-    final displayName = _stringClaim(claims, const [
+    final displayName =
+        _stringClaim(claims, const [
           'name',
           'full_name',
           'username',
@@ -20,11 +23,7 @@ class LoginUserMapper {
     final id =
         _stringClaim(claims, const ['sub', 'id', 'user_id']) ?? identifier;
 
-    return User(
-      id: id,
-      email: email,
-      displayName: displayName,
-    );
+    return User(id: id, email: email, displayName: displayName, role: role);
   }
 
   Map<String, dynamic>? _decodeJwtPayload(String token) {

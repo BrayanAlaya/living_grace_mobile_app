@@ -1,65 +1,66 @@
 import 'package:flutter/material.dart';
 
-import '../../core/layouts/home_layout.dart';
+import '../../core/layouts/app_layout.dart';
 import '../../core/theme/app_colors.dart';
-import '../../domain/entities/user.dart';
-import '../widgets/panel_drawer.dart';
-import '../widgets/primary_button.dart';
+import '../settings/settings_catalog.dart';
+import '../settings/settings_menu.dart';
+import '../widgets/settings/settings_hero.dart';
+import '../widgets/settings/settings_logout_button.dart';
+import '../widgets/settings/settings_section_card.dart';
 
-/// Pantalla de ajustes (accesible desde el perfil del header).
+/// S — compone Ajustes. La navegación llega por callbacks.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
-    required this.user,
+    required this.displayName,
+    required this.onBack,
     required this.onLogout,
-    required this.onDestinationSelected,
-    required this.onOpenSettings,
+    required this.onItemSelected,
+    this.onEditPhoto,
+    this.profileImageUrl,
+    this.sections = SettingsCatalog.sections,
   });
 
-  final User user;
+  final String displayName;
+  final VoidCallback onBack;
   final VoidCallback onLogout;
-  final ValueChanged<String> onDestinationSelected;
-  final VoidCallback onOpenSettings;
+  final ValueChanged<String> onItemSelected;
+  final VoidCallback? onEditPhoto;
+  final String? profileImageUrl;
+  final List<SettingsSection> sections;
 
   @override
   Widget build(BuildContext context) {
-    return HomeLayout(
-      currentDestinationId: PanelMenuDestinations.settings.id,
-      onDestinationSelected: onDestinationSelected,
-      onProfilePressed: onOpenSettings,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return AppLayout(
+      backgroundColor: AppColors.white,
+      statusBarBrightness: Brightness.light,
+      extendBodyBehindSafeArea: true,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(bottom: bottomInset + 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Ajustes',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: AppColors.black,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              user.email,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.label,
-              ),
+            SettingsHero(
+              displayName: displayName,
+              onBack: onBack,
+              profileImageUrl: profileImageUrl,
+              onEditPhoto: onEditPhoto,
             ),
             const SizedBox(height: 28),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.person_outline, color: AppColors.black),
-              title: Text(user.displayName),
-              subtitle: const Text('Perfil'),
-            ),
-            const Spacer(),
-            PrimaryButton(
-              label: 'Cerrar sesión',
-              onPressed: onLogout,
-            ),
+            for (final section in sections) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SettingsSectionCard(
+                  section: section,
+                  onItemSelected: onItemSelected,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+            const SizedBox(height: 8),
+            SettingsLogoutButton(onPressed: onLogout),
           ],
         ),
       ),

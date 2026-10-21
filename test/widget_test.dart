@@ -4,8 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:living_grace/core/network/api_client.dart';
 import 'package:living_grace/core/session/token_store.dart';
 import 'package:living_grace/data/repositories/mock_auth_repository.dart';
+import 'package:living_grace/domain/entities/rehearsal_draft.dart';
+import 'package:living_grace/domain/entities/user_profile.dart';
+import 'package:living_grace/domain/failures/profile_failure.dart';
+import 'package:living_grace/domain/failures/rehearsal_failure.dart';
+import 'package:living_grace/domain/repositories/profile_repository.dart';
+import 'package:living_grace/domain/repositories/rehearsal_repository.dart';
 import 'package:living_grace/main.dart';
 import 'package:living_grace/presentation/controllers/auth_controller.dart';
+import 'package:living_grace/presentation/controllers/profile_controller.dart';
+import 'package:living_grace/presentation/controllers/rehearsal_form_controller.dart';
 import 'package:living_grace/register/ministry/alabanza_ministry.dart';
 import 'package:living_grace/register/ministry/ministry_catalog.dart';
 import 'package:living_grace/register/ministry/produccion_ministry.dart';
@@ -24,6 +32,12 @@ void main() {
     await tester.pumpWidget(
       LivingGraceApp(
         authController: authController,
+        profileController: ProfileController(
+          repository: _IdleProfileRepository(),
+        ),
+        rehearsalFormController: RehearsalFormController(
+          repository: _IdleRehearsalRepository(),
+        ),
         registerController: _registerController(),
         ministryCatalog: _ministryCatalog,
         registerValidator: RegisterValidator(),
@@ -51,12 +65,33 @@ RegisterController _registerController() {
   return RegisterController(
     validator: RegisterValidator(),
     api: RegisterApi(
-      client: ApiClient(
-        baseUrl: 'http://localhost',
-        tokenStore: TokenStore(),
-      ),
+      client: ApiClient(baseUrl: 'http://localhost', tokenStore: TokenStore()),
     ),
   );
+}
+
+class _IdleRehearsalRepository implements RehearsalRepository {
+  @override
+  Future<RehearsalFailure?> create(RehearsalDraft draft) async => null;
+
+  @override
+  Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
+  listMembers(int ministryId) async {
+    return (members: const <MinistryMember>[], failure: null);
+  }
+
+  @override
+  Future<({List<MinistryOption>? ministries, RehearsalFailure? failure})>
+  listMinistries() async {
+    return (ministries: const <MinistryOption>[], failure: null);
+  }
+}
+
+class _IdleProfileRepository implements ProfileRepository {
+  @override
+  Future<({UserProfile? profile, ProfileFailure? failure})> getMine() async {
+    return (profile: null, failure: const ProfileNetworkFailure());
+  }
 }
 
 const _ministryCatalog = MinistryCatalog([
