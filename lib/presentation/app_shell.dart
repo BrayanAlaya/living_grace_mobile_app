@@ -4,6 +4,7 @@ import '../domain/entities/register_data.dart';
 import '../register/ministry/ministry_catalog.dart';
 import '../register/register_controller.dart';
 import '../register/register_validator.dart';
+import '../rehearsals/rehearsal_api.dart';
 import 'controllers/auth_controller.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
@@ -32,12 +33,14 @@ class AppShell extends StatefulWidget {
     required this.registerController,
     required this.ministryCatalog,
     required this.registerValidator,
+    required this.rehearsalApi,
   });
 
   final AuthController authController;
   final RegisterController registerController;
   final MinistryCatalog ministryCatalog;
   final RegisterValidator registerValidator;
+  final RehearsalApi rehearsalApi;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -150,6 +153,7 @@ class _AppShellState extends State<AppShell> {
           user: _auth.user!,
           onOpenSettings: _goToSettings,
           onDestinationSelected: _onPanelDestinationSelected,
+          rehearsalApi: widget.rehearsalApi,
         ),
       _AppView.settings => SettingsPage(
           user: _auth.user!,

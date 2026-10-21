@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/layouts/home_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/entities/user.dart';
+import '../../rehearsals/rehearsal_api.dart';
+import '../../rehearsals/rehearsal_home_card.dart';
 import '../widgets/panel_drawer.dart';
 
 /// Dashboard principal tras el login (contenido pendiente del diseño).
@@ -12,9 +14,11 @@ class HomePage extends StatelessWidget {
     required this.user,
     required this.onOpenSettings,
     required this.onDestinationSelected,
+    required this.rehearsalApi,
   });
 
   final User user;
+  final RehearsalApi rehearsalApi;
   final VoidCallback onOpenSettings;
   final ValueChanged<String> onDestinationSelected;
 
@@ -48,17 +52,7 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Expanded(
-              child: Center(
-                child: Text(
-                  'Dashboard',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.muted,
-                  ),
-                ),
-              ),
-            ),
+            RehearsalHomeCard(api: rehearsalApi),
           ],
         ),
       ),
