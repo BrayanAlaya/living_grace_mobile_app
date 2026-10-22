@@ -33,7 +33,7 @@ void main() {
         home: ProfilePage(
           headerTitle: 'JhanC17',
           isLoading: false,
-          data: ProfileViewMapper.map(profile, username: 'JhanC17'),
+          data: ProfileViewMapper.map(profile),
           onBack: () => backs++,
           onRetry: () {},
           onEdit: () => edits++,
@@ -41,7 +41,7 @@ void main() {
       ),
     );
 
-    expect(find.text('JhanC17'), findsWidgets);
+    expect(find.text('JhanC17'), findsOneWidget);
     expect(find.text('Jhanpool Curay'), findsWidgets);
     expect(find.text('Guitarrista'), findsOneWidget);
     expect(find.text('Información Personal'), findsOneWidget);
@@ -52,7 +52,7 @@ void main() {
     expect(find.text('12 de Agosto de 2026'), findsOneWidget);
     expect(find.text('Información Adicional'), findsOneWidget);
     expect(find.text('Alabanza / Producción'), findsOneWidget);
-    expect(find.text('Nombre de Usuario'), findsOneWidget);
+    expect(find.text('Nombre de Usuario'), findsNothing);
 
     expect(find.text('Dirección'), findsNothing);
     expect(find.text('Género'), findsNothing);

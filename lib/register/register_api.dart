@@ -3,26 +3,51 @@ import '../core/network/api_exception.dart';
 import '../data/models/user_response.dart';
 import '../domain/entities/register_data.dart';
 import '../domain/failures/register_failure.dart';
+import 'ministry/ministry_definition.dart';
 
-/// S — Single Responsibility: solo habla con POST /users/register.
+/// Habla con el alta de usuario y con los ministerios del registro.
 class RegisterApi {
   const RegisterApi({required this.client});
 
   final ApiClient client;
 
-  static const _staticUsername = 'usuario';
+  /// `GET /ministries/registration-fields`
+  Future<List<MinistryDefinition>> listMinistries() async {
+    final response = await client.get('/ministries/registration-fields');
+    final decoded = client.decodeBody(response);
+    if (response.statusCode == 200 && decoded is List) {
+      return [
+        for (final item in decoded)
+          if (item is Map)
+            MinistryDefinition.fromJson(Map<String, dynamic>.from(item)),
+      ];
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      body: decoded,
+      message: 'No se pudieron cargar los ministerios',
+    );
+  }
 
   Future<UserResponse> register(RegisterData data) async {
+    final phone = data.phone.trim();
+    final birthDate = data.birthDate.trim();
     final response = await client.post(
       '/users/register',
       body: {
         'email': data.email.trim(),
-        'username': _staticUsername,
         'password': data.password,
         'first_name': data.firstName.trim(),
         'last_name': data.lastName.trim(),
-        'phone': data.phone.trim(),
-        'birth_date': data.birthDate.trim(),
+        'phone': phone.isEmpty ? null : phone,
+        'birth_date': birthDate.isEmpty ? null : birthDate,
+        'memberships': [
+          {
+            'ministry_id': data.ministryId,
+            'function_ids': [data.serviceAreaId],
+          },
+        ],
       },
     );
 

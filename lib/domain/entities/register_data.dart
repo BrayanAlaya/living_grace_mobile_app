@@ -16,8 +16,8 @@ class RegisterData {
   final String phone;
   final String birthDate;
   final String email;
-  final String ministryId;
-  final String serviceAreaId;
+  final int ministryId;
+  final int serviceAreaId;
   final String password;
   final String confirmPassword;
 }

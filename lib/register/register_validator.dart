@@ -22,15 +22,13 @@ class RegisterValidator {
   }
 
   bool isCredentialsComplete({
-    required String? ministryId,
-    required String? serviceAreaId,
+    required int? ministryId,
+    required int? serviceAreaId,
     required String password,
     required String confirmPassword,
   }) {
     return ministryId != null &&
-        ministryId.isNotEmpty &&
         serviceAreaId != null &&
-        serviceAreaId.isNotEmpty &&
         password.isNotEmpty &&
         confirmPassword.isNotEmpty;
   }
@@ -59,15 +57,12 @@ class RegisterValidator {
   }
 
   RegisterFailure? validateCredentials({
-    required String? ministryId,
-    required String? serviceAreaId,
+    required int? ministryId,
+    required int? serviceAreaId,
     required String password,
     required String confirmPassword,
   }) {
-    if (ministryId == null ||
-        ministryId.isEmpty ||
-        serviceAreaId == null ||
-        serviceAreaId.isEmpty) {
+    if (ministryId == null || serviceAreaId == null) {
       return const MissingMinistryFailure();
     }
     if (password.isEmpty || confirmPassword.isEmpty) {

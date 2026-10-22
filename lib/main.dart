@@ -15,9 +15,6 @@ import 'presentation/app_shell.dart';
 import 'presentation/controllers/auth_controller.dart';
 import 'presentation/controllers/profile_controller.dart';
 import 'presentation/controllers/rehearsal_form_controller.dart';
-import 'register/ministry/alabanza_ministry.dart';
-import 'register/ministry/ministry_catalog.dart';
-import 'register/ministry/produccion_ministry.dart';
 import 'register/register_api.dart';
 import 'register/register_controller.dart';
 import 'register/register_validator.dart';
@@ -49,10 +46,6 @@ void main() {
     baseUrl: ApiConfig.baseUrl,
     tokenStore: TokenStore(),
   );
-  final ministryCatalog = const MinistryCatalog([
-    AlabanzaMinistry(),
-    ProduccionMinistry(),
-  ]);
   final registerValidator = RegisterValidator();
   final registerController = RegisterController(
     validator: registerValidator,
@@ -65,7 +58,6 @@ void main() {
       profileController: profileController,
       rehearsalFormController: rehearsalFormController,
       registerController: registerController,
-      ministryCatalog: ministryCatalog,
       registerValidator: registerValidator,
       rehearsalApi: RehearsalApi(tokenStore: tokenStore),
     ),
@@ -79,7 +71,6 @@ class LivingGraceApp extends StatelessWidget {
     required this.profileController,
     required this.rehearsalFormController,
     required this.registerController,
-    required this.ministryCatalog,
     required this.registerValidator,
     this.rehearsalApi,
   });
@@ -88,7 +79,6 @@ class LivingGraceApp extends StatelessWidget {
   final ProfileController profileController;
   final RehearsalFormController rehearsalFormController;
   final RegisterController registerController;
-  final MinistryCatalog ministryCatalog;
   final RegisterValidator registerValidator;
   final RehearsalApi? rehearsalApi;
 
@@ -103,7 +93,6 @@ class LivingGraceApp extends StatelessWidget {
         profileController: profileController,
         rehearsalFormController: rehearsalFormController,
         registerController: registerController,
-        ministryCatalog: ministryCatalog,
         registerValidator: registerValidator,
         rehearsalApi:
             rehearsalApi ?? RehearsalApi(tokenStore: InMemoryTokenStore()),

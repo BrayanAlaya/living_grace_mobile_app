@@ -6,4 +6,6 @@ abstract interface class RehearsalRemoteDataSource {
   Future<List<MinistryMemberDto>> listMembers(int ministryId);
 
   Future<void> create(RehearsalCreateDto request);
+
+  Future<void> update(int rehearsalId, RehearsalUpdateDto request);
 }

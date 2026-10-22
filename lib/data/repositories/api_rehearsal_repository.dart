@@ -48,6 +48,22 @@ class ApiRehearsalRepository implements RehearsalRepository {
     }
   }
 
+  @override
+  Future<RehearsalFailure?> update(
+    int rehearsalId,
+    RehearsalDraft draft,
+  ) async {
+    try {
+      await _remoteDataSource.update(
+        rehearsalId,
+        RehearsalUpdateDto.fromDraft(draft),
+      );
+      return null;
+    } on RehearsalRemoteException catch (error) {
+      return _map(error);
+    }
+  }
+
   RehearsalFailure _map(RehearsalRemoteException error) {
     return switch (error) {
       RehearsalUnauthorizedException() => const RehearsalUnauthorizedFailure(),

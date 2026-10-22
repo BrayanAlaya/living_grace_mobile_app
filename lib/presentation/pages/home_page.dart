@@ -2,23 +2,30 @@ import 'package:flutter/material.dart';
 
 import '../../core/layouts/home_layout.dart';
 import '../../core/theme/app_colors.dart';
-import '../../domain/entities/user.dart';
 import '../../rehearsals/rehearsal_api.dart';
 import '../../rehearsals/rehearsal_home_card.dart';
+import '../controllers/rehearsal_form_controller.dart';
 import '../widgets/panel_drawer.dart';
 
 /// Dashboard principal tras el login (contenido pendiente del diseño).
 class HomePage extends StatelessWidget {
   const HomePage({
     super.key,
-    required this.user,
+    required this.name,
     required this.onOpenSettings,
     required this.onDestinationSelected,
     required this.rehearsalApi,
+    this.loadingName = false,
+    this.rehearsalFormController,
+    this.canManageRehearsals = false,
   });
 
-  final User user;
+  /// Nombre de pila del perfil. No usa el usuario de inicio de sesión.
+  final String name;
+  final bool loadingName;
   final RehearsalApi rehearsalApi;
+  final RehearsalFormController? rehearsalFormController;
+  final bool canManageRehearsals;
   final VoidCallback onOpenSettings;
   final ValueChanged<String> onDestinationSelected;
 
@@ -28,12 +35,12 @@ class HomePage extends StatelessWidget {
       currentDestinationId: PanelMenuDestinations.home.id,
       onDestinationSelected: onDestinationSelected,
       onProfilePressed: onOpenSettings,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Hola',
               style: TextStyle(
                 fontSize: 16,
@@ -42,17 +49,35 @@ class HomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              user.displayName,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: AppColors.black,
-                height: 1.1,
-              ),
+            SizedBox(
+              height: 40,
+              child: loadingName
+                  ? const Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.black,
+                        height: 1.1,
+                      ),
+                    ),
             ),
             const SizedBox(height: 24),
-            RehearsalHomeCard(api: rehearsalApi),
+            RehearsalHomeCard(
+              api: rehearsalApi,
+              formController: rehearsalFormController,
+              canManage: canManageRehearsals,
+            ),
           ],
         ),
       ),

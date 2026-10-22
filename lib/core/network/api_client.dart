@@ -19,6 +19,33 @@ class ApiClient {
   final http.Client _httpClient;
   final Duration timeout;
 
+  Future<http.Response> get(String path, {bool authenticated = false}) async {
+    final uri = Uri.parse('$baseUrl$path');
+    final headers = <String, String>{'Accept': 'application/json'};
+
+    if (authenticated) {
+      final authorization = tokenStore.authorizationHeader;
+      if (authorization != null) {
+        headers['Authorization'] = authorization;
+      }
+    }
+
+    _logRequest(method: 'GET', uri: uri, headers: headers, body: null);
+
+    try {
+      final response = await _httpClient
+          .get(uri, headers: headers)
+          .timeout(timeout);
+      _logResponse(uri: uri, response: response);
+      return response;
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      _logError(uri: uri, error: error);
+      throw const ApiNetworkException();
+    }
+  }
+
   Future<http.Response> post(
     String path, {
     Map<String, dynamic>? body,
@@ -38,20 +65,11 @@ class ApiClient {
     }
 
     final encodedBody = body == null ? null : jsonEncode(body);
-    _logRequest(
-      method: 'POST',
-      uri: uri,
-      headers: headers,
-      body: body,
-    );
+    _logRequest(method: 'POST', uri: uri, headers: headers, body: body);
 
     try {
       final response = await _httpClient
-          .post(
-            uri,
-            headers: headers,
-            body: encodedBody,
-          )
+          .post(uri, headers: headers, body: encodedBody)
           .timeout(timeout);
       _logResponse(uri: uri, response: response);
       return response;
@@ -85,10 +103,7 @@ class ApiClient {
     debugPrint('└─────────────────────────────');
   }
 
-  void _logResponse({
-    required Uri uri,
-    required http.Response response,
-  }) {
+  void _logResponse({required Uri uri, required http.Response response}) {
     debugPrint('┌──────── API RESPONSE ───────');
     debugPrint('│ $uri');
     debugPrint('│ status: ${response.statusCode}');

@@ -17,6 +17,14 @@ class ProfileController extends ChangeNotifier {
   ProfileFailure? failure;
   int _ticket = 0;
 
+  void clear() {
+    _ticket++;
+    status = ProfileStatus.idle;
+    profile = null;
+    failure = null;
+    notifyListeners();
+  }
+
   Future<void> load() async {
     final ticket = ++_ticket;
     status = ProfileStatus.loading;

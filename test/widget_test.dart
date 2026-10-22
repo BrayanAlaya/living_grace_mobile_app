@@ -14,9 +14,6 @@ import 'package:living_grace/main.dart';
 import 'package:living_grace/presentation/controllers/auth_controller.dart';
 import 'package:living_grace/presentation/controllers/profile_controller.dart';
 import 'package:living_grace/presentation/controllers/rehearsal_form_controller.dart';
-import 'package:living_grace/register/ministry/alabanza_ministry.dart';
-import 'package:living_grace/register/ministry/ministry_catalog.dart';
-import 'package:living_grace/register/ministry/produccion_ministry.dart';
 import 'package:living_grace/register/register_api.dart';
 import 'package:living_grace/register/register_controller.dart';
 import 'package:living_grace/register/register_validator.dart';
@@ -39,7 +36,6 @@ void main() {
           repository: _IdleRehearsalRepository(),
         ),
         registerController: _registerController(),
-        ministryCatalog: _ministryCatalog,
         registerValidator: RegisterValidator(),
       ),
     );
@@ -51,7 +47,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Iniciar Sesión'), findsOneWidget);
-    expect(find.text('E-mail o Usuario'), findsOneWidget);
+    expect(find.text('Correo electrónico'), findsOneWidget);
 
     _tapSpan(tester, 'Regístrate');
     await tester.pumpAndSettle();
@@ -75,6 +71,14 @@ class _IdleRehearsalRepository implements RehearsalRepository {
   Future<RehearsalFailure?> create(RehearsalDraft draft) async => null;
 
   @override
+  Future<RehearsalFailure?> update(
+    int rehearsalId,
+    RehearsalDraft draft,
+  ) async {
+    return null;
+  }
+
+  @override
   Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
   listMembers(int ministryId) async {
     return (members: const <MinistryMember>[], failure: null);
@@ -93,11 +97,6 @@ class _IdleProfileRepository implements ProfileRepository {
     return (profile: null, failure: const ProfileNetworkFailure());
   }
 }
-
-const _ministryCatalog = MinistryCatalog([
-  AlabanzaMinistry(),
-  ProduccionMinistry(),
-]);
 
 void _tapSpan(WidgetTester tester, String label) {
   final richText = tester.widget<RichText>(

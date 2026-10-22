@@ -11,19 +11,23 @@ import '../widgets/app_select_field.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/primary_button.dart';
 
-/// Formulario de POST /rehearsals, con los campos del contrato.
+/// Formulario de alta y edición de un ensayo.
 class CreateRehearsalPage extends StatefulWidget {
   const CreateRehearsalPage({
     super.key,
     required this.controller,
     required this.onBack,
     required this.onCreated,
+    this.seed,
     this.validator = const RehearsalFormValidator(),
   });
 
   final RehearsalFormController controller;
   final VoidCallback onBack;
   final VoidCallback onCreated;
+
+  /// Si llega, el formulario se rellena y confirma con PATCH.
+  final RehearsalFormSeed? seed;
   final RehearsalFormValidator validator;
 
   @override
@@ -37,19 +41,25 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
   final _endController = TextEditingController();
   final _toleranceController = TextEditingController();
   final _selectedMemberIds = <int>{};
+  final _knownMembers = <int, MinistryMember>{};
+  final _memberMinistryNames = <int, String>{};
   DateTime? _startAt;
   DateTime? _endAt;
   String? _localMessage;
+  bool _filledSeed = false;
+  bool _ministryApplied = false;
 
   RehearsalFormController get _form => widget.controller;
+  bool get _editing => widget.seed != null;
 
-  String get _membersTitle {
-    final ministryId = _form.ministryId;
-    if (ministryId == null) return 'Miembros';
-    for (final ministry in _form.ministries) {
-      if (ministry.id == ministryId) return 'Miembros de ${ministry.name}';
-    }
-    return 'Miembros';
+  List<MinistryMember> get _retainedMembers {
+    final currentIds = {
+      for (final member in _form.members) member.ministryMemberId,
+    };
+    return [
+      for (final id in _selectedMemberIds)
+        if (!currentIds.contains(id)) ?_knownMembers[id],
+    ];
   }
 
   @override
@@ -80,9 +90,62 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
 
   void _onFormChanged() {
     if (!mounted) return;
-    setState(() {
-      if (_form.ministryId == null) _selectedMemberIds.clear();
+    final ministryName = _ministryName(_form.ministryId);
+    for (final member in _form.members) {
+      _knownMembers[member.ministryMemberId] = member;
+      if (ministryName != null) {
+        _memberMinistryNames[member.ministryMemberId] = ministryName;
+      }
+    }
+    _maybeApplySeed();
+    setState(() {});
+  }
+
+  void _maybeApplySeed() {
+    final seed = widget.seed;
+    if (seed == null || _form.loadingMinistries) return;
+
+    if (!_filledSeed) {
+      _filledSeed = true;
+      _nameController.text = seed.name;
+      _descriptionController.text = seed.description ?? '';
+      _startAt = seed.startAt;
+      _endAt = seed.endAt;
+      _startController.text = _formatDateTime(seed.startAt);
+      _endController.text = _formatDateTime(seed.endAt);
+      _toleranceController.text = '${seed.toleranceMinutes}';
+      _selectedMemberIds
+        ..clear()
+        ..addAll(seed.memberIds);
+      for (final member in seed.members) {
+        _knownMembers[member.ministryMemberId] = member;
+        if (seed.ministryName.isNotEmpty) {
+          _memberMinistryNames[member.ministryMemberId] = seed.ministryName;
+        }
+      }
+    }
+
+    final hasMinistry = _form.ministries.any(
+      (item) => item.id == seed.ministryId,
+    );
+    if (_ministryApplied ||
+        !hasMinistry ||
+        _form.ministryId == seed.ministryId) {
+      return;
+    }
+    _ministryApplied = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _form.ministryId == seed.ministryId) return;
+      _form.selectMinistry(seed.ministryId);
     });
+  }
+
+  String? _ministryName(int? id) {
+    if (id == null) return null;
+    for (final ministry in _form.ministries) {
+      if (ministry.id == id) return ministry.name;
+    }
+    return null;
   }
 
   Future<void> _pickDateTime({required bool start}) async {
@@ -146,20 +209,22 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
     }
 
     final description = _descriptionController.text.trim();
-    final created = await _form.submit(
-      RehearsalDraft(
-        ministryId: ministryId,
-        name: _nameController.text.trim(),
-        description: description.isEmpty ? null : description,
-        startAt: _startAt!,
-        endAt: _endAt!,
-        toleranceMinutes: widget.validator.toleranceMinutes(
-          _toleranceController.text,
-        ),
-        ministryMemberIds: _selectedMemberIds.toList(),
+    final draft = RehearsalDraft(
+      ministryId: ministryId,
+      name: _nameController.text.trim(),
+      description: description.isEmpty ? null : description,
+      startAt: _startAt!,
+      endAt: _endAt!,
+      toleranceMinutes: widget.validator.toleranceMinutes(
+        _toleranceController.text,
       ),
+      ministryMemberIds: _selectedMemberIds.toList(),
     );
-    if (!mounted || !created) return;
+    final seed = widget.seed;
+    final saved = seed == null
+        ? await _form.submit(draft)
+        : await _form.update(seed.rehearsalId, draft);
+    if (!mounted || !saved) return;
     widget.onCreated();
   }
 
@@ -174,7 +239,10 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
       extendBodyBehindSafeArea: true,
       child: Column(
         children: [
-          _FormHeader(onBack: widget.onBack),
+          _FormHeader(
+            title: _editing ? 'Editar ensayo' : 'Programar Ensayo',
+            onBack: widget.onBack,
+          ),
           Expanded(
             child: _form.loadingMinistries
                 ? const Center(
@@ -192,52 +260,6 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        AppSelectField<int>(
-                          label: 'Ministerio',
-                          placeholder: 'Elige un ministerio',
-                          value: _form.ministryId,
-                          options: [
-                            for (final ministry in _form.ministries)
-                              AppSelectOption(
-                                value: ministry.id,
-                                label: ministry.name,
-                              ),
-                          ],
-                          onChanged: (id) {
-                            setState(() {
-                              _localMessage = null;
-                              _selectedMemberIds.clear();
-                            });
-                            _form.selectMinistry(id);
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          _membersTitle,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.label,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _MembersCard(
-                          loading: _form.loadingMembers,
-                          ministrySelected: _form.ministryId != null,
-                          members: _form.members,
-                          selectedIds: _selectedMemberIds,
-                          onToggle: (id) {
-                            setState(() {
-                              _localMessage = null;
-                              if (_selectedMemberIds.contains(id)) {
-                                _selectedMemberIds.remove(id);
-                              } else {
-                                _selectedMemberIds.add(id);
-                              }
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 16),
                         AppTextField(
                           label: 'Nombre',
                           controller: _nameController,
@@ -283,6 +305,51 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
                             FilteringTextInputFormatter.digitsOnly,
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        AppSelectField<int>(
+                          label: 'Filtrar por ministerio',
+                          placeholder: 'Elige un ministerio',
+                          value: _form.ministryId,
+                          options: [
+                            for (final ministry in _form.ministries)
+                              AppSelectOption(
+                                value: ministry.id,
+                                label: ministry.name,
+                              ),
+                          ],
+                          onChanged: (id) {
+                            setState(() => _localMessage = null);
+                            _form.selectMinistry(id);
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Miembros',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.label,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _MembersCard(
+                          loading: _form.loadingMembers,
+                          ministrySelected: _form.ministryId != null,
+                          retained: _retainedMembers,
+                          members: _form.members,
+                          selectedIds: _selectedMemberIds,
+                          ministryNameFor: (id) => _memberMinistryNames[id],
+                          onToggle: (id) {
+                            setState(() {
+                              _localMessage = null;
+                              if (_selectedMemberIds.contains(id)) {
+                                _selectedMemberIds.remove(id);
+                              } else {
+                                _selectedMemberIds.add(id);
+                              }
+                            });
+                          },
+                        ),
                         if (message != null) ...[
                           const SizedBox(height: 16),
                           Text(
@@ -296,7 +363,9 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
                         ],
                         const SizedBox(height: 24),
                         PrimaryButton(
-                          label: 'Programar ensayo',
+                          label: _editing
+                              ? 'Guardar cambios'
+                              : 'Programar ensayo',
                           isLoading: _form.submitting,
                           onPressed: _form.submitting ? null : _submit,
                         ),
@@ -311,8 +380,9 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
 }
 
 class _FormHeader extends StatelessWidget {
-  const _FormHeader({required this.onBack});
+  const _FormHeader({required this.title, required this.onBack});
 
+  final String title;
   final VoidCallback onBack;
 
   @override
@@ -348,11 +418,11 @@ class _FormHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Programar Ensayo',
+                  title,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -372,58 +442,78 @@ class _MembersCard extends StatelessWidget {
   const _MembersCard({
     required this.loading,
     required this.ministrySelected,
+    required this.retained,
     required this.members,
     required this.selectedIds,
+    required this.ministryNameFor,
     required this.onToggle,
   });
 
   final bool loading;
   final bool ministrySelected;
+  final List<MinistryMember> retained;
   final List<MinistryMember> members;
   final Set<int> selectedIds;
+  final String? Function(int id) ministryNameFor;
   final ValueChanged<int> onToggle;
 
   @override
   Widget build(BuildContext context) {
-    if (!ministrySelected) {
+    final visible = [...retained, ...members];
+    final retainedIds = {
+      for (final member in retained) member.ministryMemberId,
+    };
+
+    if (!ministrySelected && visible.isEmpty) {
       return const _Hint('Elige un ministerio para ver sus miembros.');
     }
-    if (loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: AppLoadingIndicator(message: 'Cargando miembros...'),
-      );
-    }
-    if (members.isEmpty) {
-      return const _Hint('Este ministerio no tiene miembros.');
-    }
 
-    return Material(
-      color: AppColors.white,
-      elevation: 8,
-      shadowColor: const Color(0x33000000),
-      surfaceTintColor: Colors.transparent,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (var i = 0; i < members.length; i++) ...[
-            _MemberTile(
-              member: members[i],
-              selected: selectedIds.contains(members[i].ministryMemberId),
-              onTap: () => onToggle(members[i].ministryMemberId),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (visible.isNotEmpty)
+          Material(
+            color: AppColors.white,
+            elevation: 8,
+            shadowColor: const Color(0x33000000),
+            surfaceTintColor: Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < visible.length; i++) ...[
+                  _MemberTile(
+                    member: visible[i],
+                    selected: selectedIds.contains(visible[i].ministryMemberId),
+                    ministryName:
+                        retainedIds.contains(visible[i].ministryMemberId)
+                        ? ministryNameFor(visible[i].ministryMemberId)
+                        : null,
+                    onTap: () => onToggle(visible[i].ministryMemberId),
+                  ),
+                  if (i != visible.length - 1)
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: 16,
+                      endIndent: 16,
+                      color: AppColors.inputFill,
+                    ),
+                ],
+              ],
             ),
-            if (i != members.length - 1)
-              const Divider(
-                height: 1,
-                thickness: 1,
-                indent: 16,
-                endIndent: 16,
-                color: AppColors.inputFill,
-              ),
-          ],
-        ],
-      ),
+          ),
+        if (loading)
+          Padding(
+            padding: EdgeInsets.only(top: visible.isEmpty ? 0 : 12),
+            child: const AppLoadingIndicator(message: 'Cargando miembros...'),
+          )
+        else if (ministrySelected && members.isEmpty)
+          Padding(
+            padding: EdgeInsets.only(top: visible.isEmpty ? 0 : 12),
+            child: const _Hint('Este ministerio no tiene miembros.'),
+          ),
+      ],
     );
   }
 }
@@ -433,20 +523,25 @@ class _MemberTile extends StatelessWidget {
     required this.member,
     required this.selected,
     required this.onTap,
+    this.ministryName,
   });
 
   final MinistryMember member;
   final bool selected;
+  final String? ministryName;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final functions = member.functions.join(' · ');
+    final details = [
+      if (member.functions.isNotEmpty) member.functions.join(' · '),
+      if (ministryName != null && ministryName!.isNotEmpty) ministryName!,
+    ].join(' · ');
 
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
         child: Row(
           children: [
             Expanded(
@@ -461,10 +556,10 @@ class _MemberTile extends StatelessWidget {
                       color: AppColors.black,
                     ),
                   ),
-                  if (functions.isNotEmpty) ...[
+                  if (details.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      functions,
+                      details,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -475,9 +570,13 @@ class _MemberTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              selected ? Icons.check_circle : Icons.circle_outlined,
-              color: selected ? AppColors.black : AppColors.muted,
+            Checkbox(
+              value: selected,
+              onChanged: (_) => onTap(),
+              activeColor: AppColors.black,
+              checkColor: AppColors.white,
+              side: const BorderSide(color: AppColors.label, width: 1.5),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ],
         ),

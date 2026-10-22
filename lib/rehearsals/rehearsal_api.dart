@@ -9,7 +9,7 @@ import 'rehearsal.dart';
 /// Consume los endpoints de ensayos del backend.
 class RehearsalApi {
   RehearsalApi({required this.tokenStore, http.Client? client})
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   final InMemoryTokenStore tokenStore;
   final http.Client _client;
@@ -37,18 +37,42 @@ class RehearsalApi {
     return Rehearsal.fromJson(json);
   }
 
+  /// `DELETE /rehearsals/{id}`
+  Future<void> delete(int id) async {
+    final token = await tokenStore.readAccessToken();
+    final response = await _client
+        .delete(
+          Uri.parse('${ApiConfig.baseUrl}/rehearsals/$id'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        )
+        .timeout(ApiConfig.timeout);
+
+    if (response.statusCode != 204) {
+      throw Exception(
+        'No se pudo eliminar el ensayo (${response.statusCode}).',
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> _get(String path) async {
     final token = await tokenStore.readAccessToken();
-    final response = await _client.get(
-      Uri.parse('${ApiConfig.baseUrl}$path'),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    ).timeout(ApiConfig.timeout);
+    final response = await _client
+        .get(
+          Uri.parse('${ApiConfig.baseUrl}$path'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        )
+        .timeout(ApiConfig.timeout);
 
     if (response.statusCode != 200) {
-      throw Exception('No se pudieron cargar los ensayos (${response.statusCode}).');
+      throw Exception(
+        'No se pudieron cargar los ensayos (${response.statusCode}).',
+      );
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }

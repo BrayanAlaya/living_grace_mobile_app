@@ -35,26 +35,7 @@ class ProfileViewData {
 abstract final class ProfileViewMapper {
   static const emptyValue = '—';
 
-  static ProfileViewData map(UserProfile profile, {String? username}) {
-    final additional = <ProfileFieldData>[
-      ProfileFieldData(
-        icon: Icons.account_balance_outlined,
-        label: 'Ministerio',
-        value: _ministries(profile),
-      ),
-    ];
-
-    final handle = username?.trim();
-    if (handle != null && handle.isNotEmpty) {
-      additional.add(
-        ProfileFieldData(
-          icon: Icons.person_outline,
-          label: 'Nombre de Usuario',
-          value: handle,
-        ),
-      );
-    }
-
+  static ProfileViewData map(UserProfile profile) {
     return ProfileViewData(
       fullName: profile.fullName,
       role: _role(profile),
@@ -88,7 +69,13 @@ abstract final class ProfileViewMapper {
               profile.createdAt,
         ),
       ],
-      additional: additional,
+      additional: [
+        ProfileFieldData(
+          icon: Icons.account_balance_outlined,
+          label: 'Ministerio',
+          value: _ministries(profile),
+        ),
+      ],
     );
   }
 

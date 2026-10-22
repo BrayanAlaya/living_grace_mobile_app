@@ -66,6 +66,16 @@ class HttpRehearsalRemoteDataSource implements RehearsalRemoteDataSource {
     _ensureOk(response, expected: 201);
   }
 
+  @override
+  Future<void> update(int rehearsalId, RehearsalUpdateDto request) async {
+    final response = await _send(
+      'PATCH',
+      '/rehearsals/$rehearsalId',
+      body: request.toJson(),
+    );
+    _ensureOk(response, expected: 200);
+  }
+
   Future<http.Response> _send(
     String method,
     String path, {
@@ -86,6 +96,7 @@ class HttpRehearsalRemoteDataSource implements RehearsalRemoteDataSource {
     try {
       final future = switch (method) {
         'POST' => _client.post(uri, headers: headers, body: jsonEncode(body)),
+        'PATCH' => _client.patch(uri, headers: headers, body: jsonEncode(body)),
         _ => _client.get(uri, headers: headers),
       };
       return await future.timeout(_timeout);

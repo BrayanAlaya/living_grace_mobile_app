@@ -13,13 +13,8 @@ class LoginUserMapper {
     final claims = _decodeJwtPayload(accessToken);
     final email = _stringClaim(claims, const ['email']) ?? identifier;
     final displayName =
-        _stringClaim(claims, const [
-          'name',
-          'full_name',
-          'username',
-          'preferred_username',
-        ]) ??
-        (identifier.contains('@') ? identifier.split('@').first : identifier);
+        _stringClaim(claims, const ['name', 'full_name']) ??
+        (identifier.contains('@') ? identifier.split('@').first : email);
     final id =
         _stringClaim(claims, const ['sub', 'id', 'user_id']) ?? identifier;
 

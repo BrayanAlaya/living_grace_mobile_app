@@ -1,7 +1,7 @@
 import '../entities/rehearsal_draft.dart';
 import '../failures/rehearsal_failure.dart';
 
-/// Contrato para armar y crear un ensayo.
+/// Contrato para armar, crear y actualizar un ensayo.
 abstract interface class RehearsalRepository {
   Future<({List<MinistryOption>? ministries, RehearsalFailure? failure})>
   listMinistries();
@@ -10,4 +10,6 @@ abstract interface class RehearsalRepository {
   listMembers(int ministryId);
 
   Future<RehearsalFailure?> create(RehearsalDraft draft);
+
+  Future<RehearsalFailure?> update(int rehearsalId, RehearsalDraft draft);
 }

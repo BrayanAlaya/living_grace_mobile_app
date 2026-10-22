@@ -4,22 +4,15 @@ import '../core/network/api_exception.dart';
 import '../domain/entities/register_data.dart';
 import '../domain/entities/user.dart';
 import '../domain/failures/register_failure.dart';
+import 'ministry/ministry_definition.dart';
 import 'register_api.dart';
 import 'register_validator.dart';
 
-enum RegisterStatus {
-  idle,
-  submitting,
-  registered,
-  failure,
-}
+enum RegisterStatus { idle, submitting, registered, failure }
 
 /// S — Single Responsibility: solo orquesta el caso de uso de registro.
 class RegisterController extends ChangeNotifier {
-  RegisterController({
-    required this.validator,
-    required this.api,
-  });
+  RegisterController({required this.validator, required this.api});
 
   final RegisterValidator validator;
   final RegisterApi api;
@@ -27,6 +20,41 @@ class RegisterController extends ChangeNotifier {
   RegisterStatus status = RegisterStatus.idle;
   RegisterFailure? failure;
   User? user;
+  List<MinistryDefinition> ministries = const [];
+  bool loadingMinistries = false;
+  RegisterFailure? ministriesFailure;
+  int _ministryTicket = 0;
+
+  Future<void> loadMinistries() async {
+    final ticket = ++_ministryTicket;
+    loadingMinistries = true;
+    ministriesFailure = null;
+    notifyListeners();
+
+    try {
+      final items = await api.listMinistries();
+      if (ticket != _ministryTicket) return;
+      ministries = items;
+      loadingMinistries = false;
+      notifyListeners();
+    } on ApiNetworkException {
+      _failMinistries(ticket, const RegisterNetworkFailure());
+    } on ApiException catch (error) {
+      _failMinistries(ticket, api.mapFailure(error));
+    } on FormatException {
+      _failMinistries(
+        ticket,
+        const RegisterUnexpectedFailure('No pudimos leer los ministerios.'),
+      );
+    }
+  }
+
+  void _failMinistries(int ticket, RegisterFailure registerFailure) {
+    if (ticket != _ministryTicket) return;
+    loadingMinistries = false;
+    ministriesFailure = registerFailure;
+    notifyListeners();
+  }
 
   bool showFailure(RegisterFailure registerFailure) {
     status = RegisterStatus.failure;

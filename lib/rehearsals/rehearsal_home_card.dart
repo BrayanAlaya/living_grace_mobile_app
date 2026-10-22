@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
+import '../presentation/controllers/rehearsal_form_controller.dart';
 import 'rehearsal.dart';
 import 'rehearsal_api.dart';
 import 'rehearsal_detail_page.dart';
@@ -9,9 +10,16 @@ import 'rehearsals_page.dart';
 
 /// Sección "Ensayos" del dashboard con el próximo ensayo.
 class RehearsalHomeCard extends StatefulWidget {
-  const RehearsalHomeCard({super.key, required this.api});
+  const RehearsalHomeCard({
+    super.key,
+    required this.api,
+    this.formController,
+    this.canManage = false,
+  });
 
   final RehearsalApi api;
+  final RehearsalFormController? formController;
+  final bool canManage;
 
   @override
   State<RehearsalHomeCard> createState() => _RehearsalHomeCardState();
@@ -27,18 +35,43 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
     _future = widget.api.fetchUpcoming();
   }
 
-  void _openList() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => RehearsalsPage(api: widget.api)),
-    );
-  }
-
-  void _openDetail(Rehearsal rehearsal) {
-    Navigator.of(context).push(
+  Future<void> _openList() async {
+    var changed = false;
+    await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RehearsalDetailPage(api: widget.api, rehearsalId: rehearsal.id),
+        builder: (_) => RehearsalsPage(
+          api: widget.api,
+          formController: widget.formController,
+          canManage: widget.canManage,
+          onChanged: () => changed = true,
+        ),
       ),
     );
+    if (changed && mounted) _reload();
+  }
+
+  Future<void> _openDetail(Rehearsal rehearsal) async {
+    var changed = false;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RehearsalDetailPage(
+          api: widget.api,
+          rehearsalId: rehearsal.id,
+          formController: widget.formController,
+          canManage: widget.canManage,
+          onChanged: () => changed = true,
+        ),
+      ),
+    );
+    if (changed && mounted) _reload();
+  }
+
+  void _reload() {
+    final upcoming = widget.api.fetchUpcoming();
+    setState(() {
+      _selected = 0;
+      _future = upcoming;
+    });
   }
 
   @override
@@ -53,7 +86,10 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
               'Ensayos',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
-            CircleIconButton(icon: Icons.chevron_right_rounded, onPressed: _openList),
+            CircleIconButton(
+              icon: Icons.chevron_right_rounded,
+              onPressed: _openList,
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -62,12 +98,18 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const RoundedCard(
-                child: Center(child: CircularProgressIndicator()),
+                child: SizedBox(
+                  height: 72,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
               );
             }
             if (snapshot.hasError) {
-              return const RoundedCard(
-                child: Text('No se pudieron cargar los ensayos.'),
+              return RoundedCard(
+                onTap: _reload,
+                child: const Text(
+                  'No se pudieron cargar los ensayos. Toca para reintentar.',
+                ),
               );
             }
 
@@ -79,7 +121,7 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
               );
             }
 
-            final selected = upcoming[_selected];
+            final selected = upcoming[_selected.clamp(0, upcoming.length - 1)];
             return RoundedCard(
               onTap: () => _openDetail(selected),
               child: Column(
@@ -93,6 +135,7 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
                   Row(
                     children: [
                       for (var i = 0; i < upcoming.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 10),
                         Expanded(
                           child: _DayChip(
                             rehearsal: upcoming[i],
@@ -100,7 +143,6 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
                             onTap: () => setState(() => _selected = i),
                           ),
                         ),
-                        if (i == 0) const SizedBox(width: 10),
                       ],
                     ],
                   ),
@@ -118,7 +160,11 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
 
 /// Píldora "11 abril, Sábado" (negra si está seleccionada).
 class _DayChip extends StatelessWidget {
-  const _DayChip({required this.rehearsal, required this.selected, required this.onTap});
+  const _DayChip({
+    required this.rehearsal,
+    required this.selected,
+    required this.onTap,
+  });
 
   final Rehearsal rehearsal;
   final bool selected;
@@ -131,24 +177,27 @@ class _DayChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.black : AppColors.white,
           border: Border.all(color: AppColors.black),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Text.rich(
-          TextSpan(
-            style: TextStyle(fontSize: 11, color: textColor),
-            children: [
-              TextSpan(
-                text: formatDayMonth(rehearsal.startAt),
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              TextSpan(text: ', $day'),
-            ],
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text.rich(
+            TextSpan(
+              style: TextStyle(fontSize: 11, color: textColor),
+              children: [
+                TextSpan(
+                  text: formatDayMonth(rehearsal.startAt),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                TextSpan(text: ', $day'),
+              ],
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
         ),
       ),
     );

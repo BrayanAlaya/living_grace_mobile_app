@@ -66,4 +66,16 @@ class RehearsalFormController extends ChangeNotifier {
     notifyListeners();
     return error == null;
   }
+
+  Future<bool> update(int rehearsalId, RehearsalDraft draft) async {
+    submitting = true;
+    failure = null;
+    notifyListeners();
+
+    final error = await _repository.update(rehearsalId, draft);
+    submitting = false;
+    failure = error;
+    notifyListeners();
+    return error == null;
+  }
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../domain/entities/auth_credentials.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/failures/auth_failure.dart';
@@ -47,6 +49,7 @@ class ApiAuthRepository implements AuthRepository {
         token.accessToken,
         tokenType: token.tokenType,
       );
+      debugPrint('Token: ${token.accessToken}');
 
       return (
         user: User(

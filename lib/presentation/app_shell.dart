@@ -5,6 +5,7 @@ import '../register/ministry/ministry_catalog.dart';
 import '../register/register_controller.dart';
 import '../register/register_validator.dart';
 import '../rehearsals/rehearsal_api.dart';
+import 'admin/admin_catalog.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/rehearsal_form_controller.dart';
@@ -44,7 +45,6 @@ class AppShell extends StatefulWidget {
     required this.profileController,
     required this.rehearsalFormController,
     required this.registerController,
-    required this.ministryCatalog,
     required this.registerValidator,
     required this.rehearsalApi,
   });
@@ -53,7 +53,6 @@ class AppShell extends StatefulWidget {
   final ProfileController profileController;
   final RehearsalFormController rehearsalFormController;
   final RegisterController registerController;
-  final MinistryCatalog ministryCatalog;
   final RegisterValidator registerValidator;
   final RehearsalApi rehearsalApi;
 
@@ -73,23 +72,34 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     _profile.addListener(_onProfileChanged);
+    _register.addListener(_onRegisterChanged);
   }
 
   @override
   void didUpdateWidget(AppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.profileController == _profile) return;
-    oldWidget.profileController.removeListener(_onProfileChanged);
-    _profile.addListener(_onProfileChanged);
+    if (oldWidget.profileController != _profile) {
+      oldWidget.profileController.removeListener(_onProfileChanged);
+      _profile.addListener(_onProfileChanged);
+    }
+    if (oldWidget.registerController != _register) {
+      oldWidget.registerController.removeListener(_onRegisterChanged);
+      _register.addListener(_onRegisterChanged);
+    }
   }
 
   @override
   void dispose() {
     _profile.removeListener(_onProfileChanged);
+    _register.removeListener(_onRegisterChanged);
     super.dispose();
   }
 
   void _onProfileChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onRegisterChanged() {
     if (mounted) setState(() {});
   }
 
@@ -103,6 +113,7 @@ class _AppShellState extends State<AppShell> {
     _register.clearFailure();
     _registerStep = 0;
     setState(() => _view = _AppView.register);
+    _register.loadMinistries();
   }
 
   void _goToHome() {
@@ -111,6 +122,7 @@ class _AppShellState extends State<AppShell> {
 
   void _goToSettings() {
     setState(() => _view = _AppView.settings);
+    if (_profile.profile == null) _profile.load();
   }
 
   void _goToProfile() {
@@ -128,19 +140,9 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  String _greetingName() {
-    final firstName = _profile.profile?.firstName.trim() ?? '';
-    if (firstName.isNotEmpty) return firstName;
-    final displayName = _auth.user?.displayName.trim() ?? '';
-    if (displayName.isEmpty) return '';
-    return displayName.split(RegExp(r'\s+')).first;
-  }
+  String _greetingName() => _profile.profile?.firstName.trim() ?? '';
 
-  String? _sessionUsername() {
-    final id = _auth.user?.id ?? '';
-    if (id.isEmpty || id.contains('@')) return null;
-    return id;
-  }
+  String _profileFullName() => _profile.profile?.fullName.trim() ?? '';
 
   void _onSettingsItem(String id) {
     if (id == SettingsItemId.profile) {
@@ -191,6 +193,7 @@ class _AppShellState extends State<AppShell> {
 
     if (!mounted) return;
 
+    if (success) _profile.load();
     setState(() {
       _view = success ? _AppView.home : _AppView.login;
     });
@@ -204,25 +207,24 @@ class _AppShellState extends State<AppShell> {
       return;
     }
 
-    setState(() => _view = _AppView.registrationLoading);
-
     final success = await _register.register(data);
 
     if (!mounted) return;
 
+    if (!success) return;
+
+    _register.reset();
     setState(() {
-      _registerStep = success ? 0 : 1;
-      _view = success ? _AppView.login : _AppView.register;
+      _registerStep = 0;
+      _view = _AppView.login;
     });
 
-    if (success) {
-      _register.reset();
-      _showSnack('Cuenta creada. Ahora inicia sesión.');
-    }
+    _showSnack('Cuenta creada. Ahora inicia sesión.');
   }
 
   Future<void> _handleLogout() async {
     await _auth.logout();
+    _profile.clear();
     if (!mounted) return;
     setState(() => _view = _AppView.login);
   }
@@ -230,7 +232,7 @@ class _AppShellState extends State<AppShell> {
   Widget _settingsPage() {
     final user = _auth.user!;
     return SettingsPage(
-      displayName: user.displayName,
+      displayName: _profileFullName(),
       sections: SettingsCatalog.forRole(user.role),
       onBack: _goToHome,
       onLogout: _handleLogout,
@@ -251,25 +253,64 @@ class _AppShellState extends State<AppShell> {
       _AppView.sessionLoading => const SessionLoadingPage(),
       _AppView.registrationLoading => const RegistrationLoadingPage(),
       _AppView.register => RegisterPage(
-        catalog: widget.ministryCatalog,
+        catalog: MinistryCatalog(_register.ministries),
         validator: widget.registerValidator,
         initialStep: _registerStep,
+        submitting: _register.status == RegisterStatus.submitting,
         failure: _register.failure,
+        loadingMinistries: _register.loadingMinistries,
+        ministriesFailure: _register.ministriesFailure,
+        onRetryMinistries: _register.loadMinistries,
         onSubmit: _handleRegister,
         onLogin: _goToLogin,
       ),
       _AppView.home => HomePage(
-          user: _auth.user!,
-          onOpenSettings: _goToSettings,
-          onDestinationSelected: _onPanelDestinationSelected,
-          rehearsalApi: widget.rehearsalApi,
-        ),
-      _AppView.settings => SettingsPage(
-          user: _auth.user!,
-          onLogout: _handleLogout,
-          onOpenSettings: _goToSettings,
-          onDestinationSelected: _onPanelDestinationSelected,
-        ),
+        name: _greetingName(),
+        loadingName:
+            _profile.status == ProfileStatus.loading &&
+            _profile.profile == null,
+        onOpenSettings: _goToSettings,
+        onDestinationSelected: _onPanelDestinationSelected,
+        rehearsalApi: widget.rehearsalApi,
+        rehearsalFormController: widget.rehearsalFormController,
+        canManageRehearsals: _isAdmin,
+      ),
+      _AppView.settings => _settingsPage(),
+      _AppView.profile => ProfilePage(
+        headerTitle: _auth.user!.displayName,
+        isLoading:
+            _profile.status != ProfileStatus.ready &&
+            _profile.status != ProfileStatus.failure,
+        failure: _profile.status == ProfileStatus.failure
+            ? _profile.failure
+            : null,
+        data: _profile.profile == null
+            ? null
+            : ProfileViewMapper.map(_profile.profile!),
+        onBack: _goToSettings,
+        onRetry: _profile.load,
+        onEdit: () => _showSnack('Edición de perfil próximamente'),
+        onEditPhoto: () => _showSnack('Foto de perfil próximamente'),
+      ),
+      _AppView.admin =>
+        _isAdmin
+            ? AdminPanelPage(
+                greetingName: _greetingName(),
+                onBack: _goToSettings,
+                onItemSelected: _onAdminItem,
+              )
+            : _settingsPage(),
+      _AppView.scheduleRehearsal =>
+        _isAdmin
+            ? CreateRehearsalPage(
+                controller: widget.rehearsalFormController,
+                onBack: _backToAdmin,
+                onCreated: () {
+                  _backToAdmin();
+                  _showSnack('Ensayo programado.');
+                },
+              )
+            : _settingsPage(),
       _AppView.login => LoginPage(
         failure: _auth.failure,
         onSubmit: _handleLogin,

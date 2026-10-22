@@ -7,7 +7,11 @@ const Color todayCardColor = Color(0xFFDDF1FA);
 
 /// Botón circular blanco con sombra (flecha, volver).
 class CircleIconButton extends StatelessWidget {
-  const CircleIconButton({super.key, required this.icon, required this.onPressed});
+  const CircleIconButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final VoidCallback onPressed;
@@ -107,7 +111,11 @@ class DatePill extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(color: AppColors.white, fontSize: 12, fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          color: AppColors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -127,10 +135,18 @@ class RehearsalTimeRow extends StatelessWidget {
           width: 90,
           child: Column(
             children: [
-              Text(formatTime(rehearsal.startAt),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              Text(
+                formatTime(rehearsal.startAt),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(formatTime(rehearsal.endAt), style: const TextStyle(fontSize: 11)),
+              Text(
+                formatTime(rehearsal.endAt),
+                style: const TextStyle(fontSize: 11),
+              ),
             ],
           ),
         ),
@@ -139,6 +155,8 @@ class RehearsalTimeRow extends StatelessWidget {
         Expanded(
           child: Text(
             rehearsal.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           ),
         ),
@@ -181,7 +199,11 @@ class RoundedCard extends StatelessWidget {
 
 /// Tarjeta de un ensayo dentro de la lista.
 class RehearsalCard extends StatelessWidget {
-  const RehearsalCard({super.key, required this.rehearsal, required this.onTap});
+  const RehearsalCard({
+    super.key,
+    required this.rehearsal,
+    required this.onTap,
+  });
 
   final Rehearsal rehearsal;
   final VoidCallback onTap;
@@ -200,7 +222,10 @@ class RehearsalCard extends StatelessWidget {
               DatePill(text: formatDayMonth(rehearsal.startAt)),
               Text(
                 isToday ? 'Hoy' : formatWeekday(rehearsal.startAt),
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),

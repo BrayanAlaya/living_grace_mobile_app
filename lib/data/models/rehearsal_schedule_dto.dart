@@ -103,6 +103,50 @@ class RehearsalCreateDto {
   }
 }
 
+/// Cuerpo de PATCH /rehearsals/{id}. El ministerio no se cambia.
+class RehearsalUpdateDto {
+  const RehearsalUpdateDto({
+    required this.name,
+    required this.startAt,
+    required this.endAt,
+    required this.ministryMemberIds,
+    this.description,
+    this.toleranceMinutes = 0,
+  });
+
+  final String name;
+  final String? description;
+  final String startAt;
+  final String endAt;
+  final int toleranceMinutes;
+  final List<int> ministryMemberIds;
+
+  factory RehearsalUpdateDto.fromDraft(RehearsalDraft draft) {
+    final description = draft.description?.trim();
+    return RehearsalUpdateDto(
+      name: draft.name.trim(),
+      description: description == null || description.isEmpty
+          ? null
+          : description,
+      startAt: draft.startAt.toUtc().toIso8601String(),
+      endAt: draft.endAt.toUtc().toIso8601String(),
+      toleranceMinutes: draft.toleranceMinutes,
+      ministryMemberIds: draft.ministryMemberIds,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'description': description,
+      'start_at': startAt,
+      'end_at': endAt,
+      'tolerance_minutes': toleranceMinutes,
+      'ministry_member_ids': ministryMemberIds,
+    };
+  }
+}
+
 List<String> _strings(Object? raw) {
   if (raw is! List) return const [];
   return [

@@ -4,7 +4,6 @@ class UserResponse {
   const UserResponse({
     required this.id,
     required this.email,
-    required this.username,
     required this.firstName,
     required this.lastName,
     required this.status,
@@ -17,7 +16,6 @@ class UserResponse {
 
   final int id;
   final String email;
-  final String username;
   final String firstName;
   final String lastName;
   final String? phone;
@@ -31,7 +29,6 @@ class UserResponse {
     return UserResponse(
       id: json['id'] as int,
       email: json['email'] as String,
-      username: json['username'] as String,
       firstName: json['first_name'] as String,
       lastName: json['last_name'] as String,
       phone: json['phone'] as String?,
@@ -48,7 +45,7 @@ class UserResponse {
     return User(
       id: id.toString(),
       email: email,
-      displayName: displayName.isEmpty ? username : displayName,
+      displayName: displayName.isEmpty ? email : displayName,
     );
   }
 }
