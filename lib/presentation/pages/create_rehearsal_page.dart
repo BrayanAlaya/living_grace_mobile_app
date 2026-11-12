@@ -58,8 +58,16 @@ class _CreateRehearsalPageState extends State<CreateRehearsalPage> {
     };
     return [
       for (final id in _selectedMemberIds)
-        if (!currentIds.contains(id)) ?_knownMembers[id],
+        if (!currentIds.contains(id))
+          ?_activeMember(_knownMembers[id]),
     ];
+  }
+
+  MinistryMember? _activeMember(MinistryMember? member) {
+    if (member == null || member.status != MembershipStatus.active) {
+      return null;
+    }
+    return member;
   }
 
   @override

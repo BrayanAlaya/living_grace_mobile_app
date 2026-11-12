@@ -19,7 +19,6 @@ class ProfilePage extends StatelessWidget {
     this.failure,
     this.data,
     this.onEdit,
-    this.onEditPhoto,
   });
 
   final String headerTitle;
@@ -29,7 +28,6 @@ class ProfilePage extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onRetry;
   final VoidCallback? onEdit;
-  final VoidCallback? onEditPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +48,6 @@ class ProfilePage extends StatelessWidget {
               fullName: profile?.fullName,
               role: profile?.role,
               onBack: onBack,
-              onEditPhoto: onEditPhoto,
             ),
             const SizedBox(height: 28),
             if (isLoading)

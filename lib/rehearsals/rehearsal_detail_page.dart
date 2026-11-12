@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../attendance/attendance_qr.dart';
+import '../attendance/attendance_qr_api.dart';
+import '../attendance/attendance_widgets.dart';
+import '../attendance/scan_attendance_page.dart';
 import '../core/theme/app_colors.dart';
 import '../domain/entities/rehearsal_draft.dart';
 import '../presentation/controllers/rehearsal_form_controller.dart';
@@ -17,6 +21,8 @@ class RehearsalDetailPage extends StatefulWidget {
     this.formController,
     this.canManage = false,
     this.onChanged,
+    this.attendanceApi,
+    this.scannerBuilder,
   });
 
   final RehearsalApi api;
@@ -26,6 +32,8 @@ class RehearsalDetailPage extends StatefulWidget {
 
   /// Avisa a la lista cuando el ensayo se editó o se eliminó.
   final VoidCallback? onChanged;
+  final AttendanceQrApi? attendanceApi;
+  final AttendanceScannerBuilder? scannerBuilder;
 
   @override
   State<RehearsalDetailPage> createState() => _RehearsalDetailPageState();
@@ -141,6 +149,57 @@ class _RehearsalDetailPageState extends State<RehearsalDetailPage> {
     }
   }
 
+  Future<void> _scanAttendance(Rehearsal rehearsal) async {
+    final checkIn = await Navigator.of(context).push<AttendanceCheckIn>(
+      MaterialPageRoute(
+        builder: (_) => ScanAttendancePage(
+          rehearsal: rehearsal,
+          api: widget.attendanceApi ?? AttendanceQrApi(),
+          scannerBuilder: widget.scannerBuilder,
+        ),
+      ),
+    );
+    if (checkIn == null || !mounted) return;
+    widget.onChanged?.call();
+    await _load(refresh: true);
+    if (!mounted) return;
+    final timing = attendanceTimingMessage(
+      startAt: rehearsal.startAt,
+      toleranceMinutes: rehearsal.toleranceMinutes,
+      scannedAt: checkIn.markedAt,
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            'Asistencia registrada',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Se ha registrado tu asistencia correctamente.'),
+              const SizedBox(height: 12),
+              Text(timing),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Listo'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   RehearsalFormSeed _seed(Rehearsal rehearsal) {
     return RehearsalFormSeed(
       rehearsalId: rehearsal.id,
@@ -197,6 +256,7 @@ class _RehearsalDetailPageState extends State<RehearsalDetailPage> {
                           ? null
                           : () => _edit(rehearsal),
                       onDelete: _confirmDelete,
+                      onScan: () => _scanAttendance(rehearsal),
                     ),
             ),
           ],
@@ -213,6 +273,7 @@ class _DetailContent extends StatelessWidget {
     required this.deleting,
     required this.onEdit,
     required this.onDelete,
+    required this.onScan,
   });
 
   final Rehearsal rehearsal;
@@ -220,6 +281,7 @@ class _DetailContent extends StatelessWidget {
   final bool deleting;
   final VoidCallback? onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +326,22 @@ class _DetailContent extends StatelessWidget {
                 label: 'Tolerancia',
                 value: '${rehearsal.toleranceMinutes} min',
               ),
+              if (rehearsal.myAttendanceStatus != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Tu asistencia: ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      AttendanceStatusChip(status: rehearsal.myAttendanceStatus!),
+                    ],
+                  ),
+                ),
               if (rehearsal.participantCount != null)
                 _InfoLine(
                   label: 'Participantes',
@@ -317,6 +395,24 @@ class _DetailContent extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ] else ...[
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: onScan,
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Marcar asistencia'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.black,
+                      foregroundColor: AppColors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -397,6 +493,8 @@ class _MemberRow extends StatelessWidget {
             ],
           ),
         ),
+        if (participant.attendanceStatus != null)
+          AttendanceStatusChip(status: participant.attendanceStatus!),
       ],
     );
   }

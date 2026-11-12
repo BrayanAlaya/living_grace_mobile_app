@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
 
 import '../domain/entities/register_data.dart';
+import '../domain/failures/auth_failure.dart';
 import '../register/ministry/ministry_catalog.dart';
 import '../register/register_controller.dart';
 import '../register/register_validator.dart';
+import '../attendance/admin_attendance_page.dart';
+import '../attendance/attendance_panel_page.dart';
+import '../attendance/attendance_qr_api.dart';
+import '../attendance/generate_qr_page.dart';
+import '../core/layouts/home_layout.dart';
+import '../dashboard/dashboard_api.dart';
 import '../rehearsals/rehearsal_api.dart';
+import '../rehearsals/rehearsals_page.dart';
 import 'admin/admin_catalog.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/rehearsal_form_controller.dart';
 import 'pages/admin_panel_page.dart';
+import 'pages/change_password_page.dart';
 import 'pages/create_rehearsal_page.dart';
+import 'pages/forgot_password_page.dart';
 import 'pages/home_page.dart';
+import 'pages/ministry_members_page.dart';
 import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/register_page.dart';
@@ -31,10 +42,17 @@ enum _AppView {
   register,
   registrationLoading,
   home,
+  rehearsals,
+  attendances,
   settings,
   profile,
   admin,
   scheduleRehearsal,
+  generateQr,
+  adminAttendance,
+  ministryMembers,
+  changePassword,
+  forgotPassword,
 }
 
 /// Orquesta las pantallas de la app sobre el árbol de layouts.
@@ -47,6 +65,7 @@ class AppShell extends StatefulWidget {
     required this.registerController,
     required this.registerValidator,
     required this.rehearsalApi,
+    this.dashboardApi,
   });
 
   final AuthController authController;
@@ -55,6 +74,7 @@ class AppShell extends StatefulWidget {
   final RegisterController registerController;
   final RegisterValidator registerValidator;
   final RehearsalApi rehearsalApi;
+  final DashboardApi? dashboardApi;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -63,6 +83,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   _AppView _view = _AppView.splash;
   int _registerStep = 0;
+  int _homeEpoch = 0;
 
   AuthController get _auth => widget.authController;
   ProfileController get _profile => widget.profileController;
@@ -117,7 +138,18 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _goToHome() {
-    setState(() => _view = _AppView.home);
+    setState(() {
+      _homeEpoch++;
+      _view = _AppView.home;
+    });
+  }
+
+  void _goToRehearsals() {
+    setState(() => _view = _AppView.rehearsals);
+  }
+
+  void _goToAttendances() {
+    setState(() => _view = _AppView.attendances);
   }
 
   void _goToSettings() {
@@ -130,7 +162,7 @@ class _AppShellState extends State<AppShell> {
     _profile.load();
   }
 
-  bool get _isAdmin => _auth.user?.role.isAdmin ?? false;
+  bool get _isAdmin => _profile.profile?.isGlobalAdmin == true;
 
   void _goToAdmin() {
     if (!_isAdmin) return;
@@ -153,7 +185,37 @@ class _AppShellState extends State<AppShell> {
       _goToAdmin();
       return;
     }
+    if (id == SettingsItemId.password) {
+      setState(() => _view = _AppView.changePassword);
+      return;
+    }
     _showSnack('Próximamente');
+  }
+
+  void _goToForgotPassword() {
+    _auth.clearFailure();
+    setState(() => _view = _AppView.forgotPassword);
+  }
+
+  Future<AuthFailure?> _handleRecoverPassword({
+    required String identifier,
+    required String temporaryPassword,
+    required String newPassword,
+  }) async {
+    final loggedIn = await _auth.login(
+      identifier: identifier,
+      password: temporaryPassword,
+    );
+    if (!loggedIn) return _auth.failure;
+
+    final error = await _auth.changePassword(
+      currentPassword: temporaryPassword,
+      newPassword: newPassword,
+    );
+    if (error != null) return error;
+
+    await _finishPasswordChange();
+    return null;
   }
 
   void _backToAdmin() {
@@ -170,6 +232,18 @@ class _AppShellState extends State<AppShell> {
       setState(() => _view = _AppView.scheduleRehearsal);
       return;
     }
+    if (id == AdminItemId.qrCode) {
+      setState(() => _view = _AppView.generateQr);
+      return;
+    }
+    if (id == AdminItemId.attendance) {
+      setState(() => _view = _AppView.adminAttendance);
+      return;
+    }
+    if (id == AdminItemId.members) {
+      setState(() => _view = _AppView.ministryMembers);
+      return;
+    }
     _showSnack('Próximamente');
   }
 
@@ -178,9 +252,26 @@ class _AppShellState extends State<AppShell> {
       _goToHome();
       return;
     }
+    if (destinationId == PanelMenuDestinations.rehearsals.id) {
+      _goToRehearsals();
+      return;
+    }
+    if (destinationId == PanelMenuDestinations.attendances.id) {
+      _goToAttendances();
+      return;
+    }
     if (destinationId == PanelMenuDestinations.settings.id) {
       _goToSettings();
     }
+  }
+
+  Widget _panel({required String destinationId, required Widget child}) {
+    return HomeLayout(
+      currentDestinationId: destinationId,
+      onDestinationSelected: _onPanelDestinationSelected,
+      onProfilePressed: _goToSettings,
+      child: child,
+    );
   }
 
   Future<void> _handleLogin(String identifier, String password) async {
@@ -193,9 +284,16 @@ class _AppShellState extends State<AppShell> {
 
     if (!mounted) return;
 
-    if (success) _profile.load();
+    if (success) await _profile.load();
+    if (!mounted) return;
     setState(() {
-      _view = success ? _AppView.home : _AppView.login;
+      if (!success) {
+        _view = _AppView.login;
+      } else if (_auth.user?.mustChangePassword == true) {
+        _view = _AppView.changePassword;
+      } else {
+        _view = _AppView.home;
+      }
     });
   }
 
@@ -229,14 +327,18 @@ class _AppShellState extends State<AppShell> {
     setState(() => _view = _AppView.login);
   }
 
+  Future<void> _finishPasswordChange() async {
+    await _handleLogout();
+    if (!mounted) return;
+    _showSnack('Contraseña actualizada. Inicia sesión con tu nueva clave.');
+  }
+
   Widget _settingsPage() {
-    final user = _auth.user!;
     return SettingsPage(
       displayName: _profileFullName(),
-      sections: SettingsCatalog.forRole(user.role),
+      sections: SettingsCatalog.forAdmin(_isAdmin),
       onBack: _goToHome,
       onLogout: _handleLogout,
-      onEditPhoto: () => _showSnack('Foto de perfil próximamente'),
       onItemSelected: _onSettingsItem,
     );
   }
@@ -265,6 +367,7 @@ class _AppShellState extends State<AppShell> {
         onLogin: _goToLogin,
       ),
       _AppView.home => HomePage(
+        key: ValueKey(_homeEpoch),
         name: _greetingName(),
         loadingName:
             _profile.status == ProfileStatus.loading &&
@@ -272,8 +375,28 @@ class _AppShellState extends State<AppShell> {
         onOpenSettings: _goToSettings,
         onDestinationSelected: _onPanelDestinationSelected,
         rehearsalApi: widget.rehearsalApi,
+        dashboardApi: widget.dashboardApi,
         rehearsalFormController: widget.rehearsalFormController,
         canManageRehearsals: _isAdmin,
+      ),
+      _AppView.rehearsals => _panel(
+        destinationId: PanelMenuDestinations.rehearsals.id,
+        child: RehearsalsPage(
+          api: widget.rehearsalApi,
+          formController: widget.rehearsalFormController,
+          canManage: _isAdmin,
+          embedded: true,
+        ),
+      ),
+      _AppView.attendances => _panel(
+        destinationId: PanelMenuDestinations.attendances.id,
+        child: _isAdmin
+            ? AdminAttendancePage(
+                onBack: _goToHome,
+                rehearsalApi: widget.rehearsalApi,
+                showHeader: false,
+              )
+            : AttendancePanelPage(api: widget.dashboardApi),
       ),
       _AppView.settings => _settingsPage(),
       _AppView.profile => ProfilePage(
@@ -290,7 +413,6 @@ class _AppShellState extends State<AppShell> {
         onBack: _goToSettings,
         onRetry: _profile.load,
         onEdit: () => _showSnack('Edición de perfil próximamente'),
-        onEditPhoto: () => _showSnack('Foto de perfil próximamente'),
       ),
       _AppView.admin =>
         _isAdmin
@@ -311,13 +433,52 @@ class _AppShellState extends State<AppShell> {
                 },
               )
             : _settingsPage(),
+      _AppView.generateQr =>
+        _isAdmin
+            ? GenerateQrPage(
+                onBack: _backToAdmin,
+                qrApi: AttendanceQrApi(rehearsalApi: widget.rehearsalApi),
+              )
+            : _settingsPage(),
+      _AppView.adminAttendance =>
+        _isAdmin
+            ? AdminAttendancePage(
+                onBack: _backToAdmin,
+                rehearsalApi: widget.rehearsalApi,
+              )
+            : _settingsPage(),
+      _AppView.ministryMembers =>
+        _isAdmin
+            ? MinistryMembersPage(
+                onBack: _backToAdmin,
+                repository: widget.rehearsalFormController.repository,
+                onResetPassword: (userId) => _auth.resetPassword(userId),
+              )
+            : _settingsPage(),
+      _AppView.changePassword => ChangePasswordPage(
+        forced: _auth.user?.mustChangePassword == true,
+        onBack: _goToSettings,
+        onSubmit: ({required currentPassword, required newPassword}) async {
+          final error = await _auth.changePassword(
+            currentPassword: currentPassword,
+            newPassword: newPassword,
+          );
+          if (error == null && mounted) {
+            await _finishPasswordChange();
+          }
+          return error;
+        },
+      ),
+      _AppView.forgotPassword => ForgotPasswordPage(
+        failure: _auth.failure,
+        onBack: _goToLogin,
+        onSubmit: _handleRecoverPassword,
+      ),
       _AppView.login => LoginPage(
         failure: _auth.failure,
         onSubmit: _handleLogin,
-        onForgotPassword: () =>
-            _showSnack('Recuperación de contraseña próximamente'),
-        onResetPassword: () =>
-            _showSnack('Restablecer contraseña próximamente'),
+        onForgotPassword: _goToForgotPassword,
+        onResetPassword: _goToForgotPassword,
         onRegister: _goToRegister,
       ),
     };

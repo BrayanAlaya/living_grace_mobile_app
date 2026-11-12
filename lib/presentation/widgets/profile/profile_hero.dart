@@ -10,14 +10,12 @@ class ProfileHero extends StatelessWidget {
     required this.onBack,
     this.fullName,
     this.role,
-    this.onEditPhoto,
   });
 
   final String title;
   final VoidCallback onBack;
   final String? fullName;
   final String? role;
-  final VoidCallback? onEditPhoto;
 
   static const _avatarSize = 108.0;
 
@@ -43,10 +41,7 @@ class ProfileHero extends StatelessWidget {
             ),
             Positioned(
               bottom: 0,
-              child: _ProfileAvatar(
-                size: _avatarSize,
-                onEditPhoto: onEditPhoto,
-              ),
+              child: _ProfileAvatar(size: _avatarSize),
             ),
           ],
         ),
@@ -174,61 +169,44 @@ class _CircleIconButton extends StatelessWidget {
 }
 
 class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.size, required this.onEditPhoto});
+  const _ProfileAvatar({required this.size});
 
   final double size;
-  final VoidCallback? onEditPhoto;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: size,
       height: size,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.16),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.white,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.16),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
-            child: const Padding(
-              padding: EdgeInsets.all(3),
-              child: ClipOval(
-                child: ColoredBox(
-                  color: AppColors.inputFill,
-                  child: SizedBox.expand(
-                    child: Center(
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 48,
-                        color: AppColors.label,
-                      ),
-                    ),
+          ],
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(3),
+          child: ClipOval(
+            child: ColoredBox(
+              color: AppColors.inputFill,
+              child: SizedBox.expand(
+                child: Center(
+                  child: Icon(
+                    Icons.person_rounded,
+                    size: 48,
+                    color: AppColors.label,
                   ),
                 ),
               ),
             ),
           ),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: _CircleIconButton(
-              tooltip: 'Cambiar foto',
-              icon: Icons.photo_camera_outlined,
-              onPressed: onEditPhoto,
-              size: 34,
-              iconSize: 18,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

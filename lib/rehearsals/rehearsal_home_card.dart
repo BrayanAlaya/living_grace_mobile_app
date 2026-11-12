@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../attendance/attendance_qr_api.dart';
 import '../core/theme/app_colors.dart';
 import '../presentation/controllers/rehearsal_form_controller.dart';
 import 'rehearsal.dart';
@@ -8,50 +9,52 @@ import 'rehearsal_detail_page.dart';
 import 'rehearsal_widgets.dart';
 import 'rehearsals_page.dart';
 
-/// Sección "Ensayos" del dashboard con el próximo ensayo.
+/// Sección "Ensayos" del dashboard. Los datos llegan de `GET /dashboard/me`.
 class RehearsalHomeCard extends StatefulWidget {
   const RehearsalHomeCard({
     super.key,
     required this.api,
+    required this.rehearsals,
     this.formController,
     this.canManage = false,
+    this.onSessionChanged,
   });
 
   final RehearsalApi api;
+  final List<Rehearsal> rehearsals;
   final RehearsalFormController? formController;
   final bool canManage;
+  final VoidCallback? onSessionChanged;
 
   @override
   State<RehearsalHomeCard> createState() => _RehearsalHomeCardState();
 }
 
 class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
-  late Future<List<Rehearsal>> _future;
   int _selected = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _future = widget.api.fetchUpcoming();
+  void didUpdateWidget(RehearsalHomeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.rehearsals != widget.rehearsals) {
+      _selected = 0;
+    }
   }
 
   Future<void> _openList() async {
-    var changed = false;
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RehearsalsPage(
           api: widget.api,
           formController: widget.formController,
           canManage: widget.canManage,
-          onChanged: () => changed = true,
         ),
       ),
     );
-    if (changed && mounted) _reload();
+    if (mounted) widget.onSessionChanged?.call();
   }
 
   Future<void> _openDetail(Rehearsal rehearsal) async {
-    var changed = false;
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RehearsalDetailPage(
@@ -59,23 +62,17 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
           rehearsalId: rehearsal.id,
           formController: widget.formController,
           canManage: widget.canManage,
-          onChanged: () => changed = true,
+          attendanceApi: AttendanceQrApi(rehearsalApi: widget.api),
         ),
       ),
     );
-    if (changed && mounted) _reload();
-  }
-
-  void _reload() {
-    final upcoming = widget.api.fetchUpcoming();
-    setState(() {
-      _selected = 0;
-      _future = upcoming;
-    });
+    if (mounted) widget.onSessionChanged?.call();
   }
 
   @override
   Widget build(BuildContext context) {
+    final upcoming = widget.rehearsals.take(2).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -93,66 +90,44 @@ class _RehearsalHomeCardState extends State<RehearsalHomeCard> {
           ],
         ),
         const SizedBox(height: 12),
-        FutureBuilder<List<Rehearsal>>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const RoundedCard(
-                child: SizedBox(
-                  height: 72,
-                  child: Center(child: CircularProgressIndicator()),
+        if (upcoming.isEmpty)
+          RoundedCard(
+            onTap: _openList,
+            child: const Text('No hay ensayos programados.'),
+          )
+        else
+          RoundedCard(
+            onTap: () =>
+                _openDetail(upcoming[_selected.clamp(0, upcoming.length - 1)]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Próximo ensayo',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
-              );
-            }
-            if (snapshot.hasError) {
-              return RoundedCard(
-                onTap: _reload,
-                child: const Text(
-                  'No se pudieron cargar los ensayos. Toca para reintentar.',
-                ),
-              );
-            }
-
-            final upcoming = snapshot.data!.take(2).toList();
-            if (upcoming.isEmpty) {
-              return RoundedCard(
-                onTap: _openList,
-                child: const Text('No hay ensayos programados.'),
-              );
-            }
-
-            final selected = upcoming[_selected.clamp(0, upcoming.length - 1)];
-            return RoundedCard(
-              onTap: () => _openDetail(selected),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Próximo ensayo',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      for (var i = 0; i < upcoming.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 10),
-                        Expanded(
-                          child: _DayChip(
-                            rehearsal: upcoming[i],
-                            selected: i == _selected,
-                            onTap: () => setState(() => _selected = i),
-                          ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    for (var i = 0; i < upcoming.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 10),
+                      Expanded(
+                        child: _DayChip(
+                          rehearsal: upcoming[i],
+                          selected: i == _selected,
+                          onTap: () => setState(() => _selected = i),
                         ),
-                      ],
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  RehearsalTimeRow(rehearsal: selected),
-                ],
-              ),
-            );
-          },
-        ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                RehearsalTimeRow(
+                  rehearsal: upcoming[_selected.clamp(0, upcoming.length - 1)],
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }

@@ -80,8 +80,20 @@ class _IdleRehearsalRepository implements RehearsalRepository {
 
   @override
   Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
-  listMembers(int ministryId) async {
+  listMembers(
+    int ministryId, {
+    MembershipStatus status = MembershipStatus.active,
+  }) async {
     return (members: const <MinistryMember>[], failure: null);
+  }
+
+  @override
+  Future<RehearsalFailure?> updateMemberStatus(
+    int ministryId,
+    int membershipId,
+    MembershipStatus status,
+  ) async {
+    return null;
   }
 
   @override

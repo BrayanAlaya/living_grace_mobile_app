@@ -7,7 +7,16 @@ abstract interface class RehearsalRepository {
   listMinistries();
 
   Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
-  listMembers(int ministryId);
+  listMembers(
+    int ministryId, {
+    MembershipStatus status = MembershipStatus.active,
+  });
+
+  Future<RehearsalFailure?> updateMemberStatus(
+    int ministryId,
+    int membershipId,
+    MembershipStatus status,
+  );
 
   Future<RehearsalFailure?> create(RehearsalDraft draft);
 

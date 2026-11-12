@@ -6,10 +6,19 @@ import 'package:living_grace/presentation/pages/settings_page.dart';
 import 'package:living_grace/presentation/settings/settings_catalog.dart';
 
 void main() {
-  test('sin idRol el login queda en admin', () {
+  test('sin idRol el token no otorga admin', () {
     final token = TokenResponseDto.fromJson({'access_token': 'tok'});
 
-    expect(token.role, UserRole.admin);
+    expect(token.role, UserRole.user);
+    expect(token.mustChangePassword, isFalse);
+  });
+
+  test('must_change_password llega en el token', () {
+    final token = TokenResponseDto.fromJson({
+      'access_token': 'tok',
+      'must_change_password': true,
+    });
+    expect(token.mustChangePassword, isTrue);
   });
 
   test('idRol 2 es usuario e idRol 1 es admin', () {
@@ -24,7 +33,7 @@ void main() {
   });
 
   test('un usuario no ve la card de administración', () {
-    final sections = SettingsCatalog.forRole(UserRole.user);
+    final sections = SettingsCatalog.forAdmin(false);
     final titles = sections.map((section) => section.title);
 
     expect(titles, isNot(contains('Administrador')));

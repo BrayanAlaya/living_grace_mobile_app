@@ -28,21 +28,8 @@ abstract final class AdminCatalog {
           id: AdminItemId.qrCode,
           title: 'Generar Código QR',
           subtitle: 'Generar códigos para asistencia',
-          icon: Icons.code,
+          icon: Icons.qr_code_2_outlined,
           iconColor: AppColors.success,
-        ),
-      ],
-    ),
-    SettingsSection(
-      id: 'music',
-      title: 'Musica',
-      items: [
-        SettingsMenuItem(
-          id: AdminItemId.songs,
-          title: 'Canciones',
-          subtitle: 'Crear y administrar canciones',
-          icon: Icons.music_note_outlined,
-          iconColor: AppColors.warning,
         ),
       ],
     ),
@@ -51,38 +38,11 @@ abstract final class AdminCatalog {
       title: 'Ministerio',
       items: [
         SettingsMenuItem(
-          id: AdminItemId.funds,
-          title: 'Fondos del Ministerio',
-          subtitle: 'Gestionar fondos y contribuciones',
-          icon: Icons.account_balance_wallet_outlined,
-          iconColor: AppColors.success,
-        ),
-        SettingsMenuItem(
           id: AdminItemId.members,
           title: 'Miembros',
           subtitle: 'Administrar miembros del ministerio',
           icon: Icons.people_outline,
           iconColor: AppColors.accent,
-        ),
-      ],
-    ),
-    SettingsSection(
-      id: 'control',
-      title: 'Control',
-      items: [
-        SettingsMenuItem(
-          id: AdminItemId.reports,
-          title: 'Reportes',
-          subtitle: 'Ver reportes y estadísticas',
-          icon: Icons.folder_outlined,
-          iconColor: AppColors.warning,
-        ),
-        SettingsMenuItem(
-          id: AdminItemId.fines,
-          title: 'Configuración de Multas',
-          subtitle: 'Ajustes del ministerio',
-          icon: Icons.settings_outlined,
-          iconColor: AppColors.black,
         ),
       ],
     ),
@@ -93,9 +53,5 @@ abstract final class AdminItemId {
   static const scheduleRehearsals = 'schedule-rehearsals';
   static const attendance = 'attendance';
   static const qrCode = 'qr-code';
-  static const songs = 'songs';
-  static const funds = 'funds';
   static const members = 'members';
-  static const reports = 'reports';
-  static const fines = 'fines';
 }

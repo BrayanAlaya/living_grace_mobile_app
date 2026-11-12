@@ -46,5 +46,20 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AuthFailure?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    return null;
+  }
+
+  @override
+  Future<({String? temporaryPassword, AuthFailure? failure})> resetPassword(
+    int userId,
+  ) async {
+    return (temporaryPassword: 'temp1234', failure: null);
+  }
+
+  @override
   Future<void> logout() async {}
 }

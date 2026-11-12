@@ -5,18 +5,48 @@ class MinistryOption {
   final String name;
 }
 
+enum MembershipStatus {
+  pending,
+  active,
+  inactive;
+
+  String get apiValue => switch (this) {
+    MembershipStatus.pending => 'PENDING',
+    MembershipStatus.active => 'ACTIVE',
+    MembershipStatus.inactive => 'INACTIVE',
+  };
+
+  String get label => switch (this) {
+    MembershipStatus.pending => 'Pendiente',
+    MembershipStatus.active => 'Activo',
+    MembershipStatus.inactive => 'Inactivo',
+  };
+
+  static MembershipStatus fromApi(Object? raw) {
+    return switch (raw) {
+      'PENDING' => MembershipStatus.pending,
+      'INACTIVE' => MembershipStatus.inactive,
+      _ => MembershipStatus.active,
+    };
+  }
+}
+
 class MinistryMember {
   const MinistryMember({
     required this.ministryMemberId,
     required this.firstName,
     required this.lastName,
+    this.userId,
     this.functions = const [],
+    this.status = MembershipStatus.active,
   });
 
   final int ministryMemberId;
+  final int? userId;
   final String firstName;
   final String lastName;
   final List<String> functions;
+  final MembershipStatus status;
 
   String get fullName => '$firstName $lastName'.trim();
 }

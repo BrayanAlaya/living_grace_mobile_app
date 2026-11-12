@@ -31,14 +31,14 @@ void main() {
     expect(find.text('Programar Ensayos'), findsOneWidget);
     expect(find.text('Asistencia'), findsOneWidget);
     expect(find.text('Generar Código QR'), findsOneWidget);
-    expect(find.text('Musica'), findsOneWidget);
-    expect(find.text('Canciones'), findsOneWidget);
+    expect(find.text('Musica'), findsNothing);
+    expect(find.text('Canciones'), findsNothing);
     expect(find.text('Ministerio'), findsOneWidget);
-    expect(find.text('Fondos del Ministerio'), findsOneWidget);
+    expect(find.text('Fondos del Ministerio'), findsNothing);
     expect(find.text('Miembros'), findsOneWidget);
-    expect(find.text('Control'), findsOneWidget);
-    expect(find.text('Reportes'), findsOneWidget);
-    expect(find.text('Configuración de Multas'), findsOneWidget);
+    expect(find.text('Control'), findsNothing);
+    expect(find.text('Reportes'), findsNothing);
+    expect(find.text('Configuración de Multas'), findsNothing);
 
     await tester.tap(find.byTooltip('Ajustes'));
     await tester.pump();
@@ -48,9 +48,12 @@ void main() {
     await tester.pump();
     expect(selected, AdminItemId.scheduleRehearsals);
 
-    await tester.scrollUntilVisible(find.text('Configuración de Multas'), 300);
-    await tester.tap(find.text('Configuración de Multas'));
+    await tester.tap(find.text('Generar Código QR'));
     await tester.pump();
-    expect(selected, AdminItemId.fines);
+    expect(selected, AdminItemId.qrCode);
+
+    await tester.tap(find.text('Miembros'));
+    await tester.pump();
+    expect(selected, AdminItemId.members);
   });
 }

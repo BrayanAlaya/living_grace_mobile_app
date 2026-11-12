@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/config/api_config.dart';
+import '../../domain/entities/rehearsal_draft.dart';
 import '../../domain/repositories/token_store.dart';
 import '../models/rehearsal_schedule_dto.dart';
 import 'rehearsal_remote_datasource.dart';
@@ -42,8 +43,14 @@ class HttpRehearsalRemoteDataSource implements RehearsalRemoteDataSource {
   }
 
   @override
-  Future<List<MinistryMemberDto>> listMembers(int ministryId) async {
-    final response = await _send('GET', '/ministries/$ministryId/members');
+  Future<List<MinistryMemberDto>> listMembers(
+    int ministryId, {
+    MembershipStatus status = MembershipStatus.active,
+  }) async {
+    final response = await _send(
+      'GET',
+      '/ministries/$ministryId/members?status=${status.apiValue}',
+    );
     _ensureOk(response, expected: 200);
     try {
       final body = jsonDecode(response.body);
@@ -58,6 +65,20 @@ class HttpRehearsalRemoteDataSource implements RehearsalRemoteDataSource {
     } on FormatException {
       throw const RehearsalParseException();
     }
+  }
+
+  @override
+  Future<void> updateMemberStatus(
+    int ministryId,
+    int membershipId,
+    MembershipStatus status,
+  ) async {
+    final response = await _send(
+      'PATCH',
+      '/ministries/$ministryId/members/$membershipId/status',
+      body: <String, dynamic>{'status': status.apiValue},
+    );
+    _ensureOk(response, expected: 200);
   }
 
   @override

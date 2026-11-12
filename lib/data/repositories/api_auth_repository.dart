@@ -57,6 +57,7 @@ class ApiAuthRepository implements AuthRepository {
           email: identifier,
           displayName: _displayName(identifier),
           role: token.role,
+          mustChangePassword: token.mustChangePassword,
         ),
         failure: null,
       );
@@ -68,6 +69,71 @@ class ApiAuthRepository implements AuthRepository {
       return (user: null, failure: const NetworkFailure());
     } on AuthServerException {
       return (user: null, failure: const NetworkFailure());
+    }
+  }
+
+  @override
+  Future<AuthFailure?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final token = await _tokenStore.readAccessToken();
+    if (token == null || token.isEmpty) {
+      return const AuthUnexpectedFailure('Tu sesión expiró. Inicia sesión otra vez.');
+    }
+    try {
+      await _remoteDataSource.changePassword(
+        accessToken: token,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return null;
+    } on AuthUnauthorizedException {
+      return const InvalidCredentialsFailure();
+    } on AuthValidationException catch (error) {
+      return _mapValidationFailure(error.message);
+    } on AuthNetworkException {
+      return const NetworkFailure();
+    } on AuthServerException {
+      return const NetworkFailure();
+    }
+  }
+
+  @override
+  Future<({String? temporaryPassword, AuthFailure? failure})> resetPassword(
+    int userId,
+  ) async {
+    final token = await _tokenStore.readAccessToken();
+    if (token == null || token.isEmpty) {
+      return (
+        temporaryPassword: null,
+        failure: const AuthUnexpectedFailure(
+          'Tu sesión expiró. Inicia sesión otra vez.',
+        ),
+      );
+    }
+    try {
+      final password = await _remoteDataSource.resetPassword(
+        accessToken: token,
+        userId: userId,
+      );
+      return (temporaryPassword: password, failure: null);
+    } on AuthUnauthorizedException {
+      return (
+        temporaryPassword: null,
+        failure: const AuthUnexpectedFailure(
+          'No tienes permiso para restablecer esta contraseña.',
+        ),
+      );
+    } on AuthValidationException catch (error) {
+      return (
+        temporaryPassword: null,
+        failure: _mapValidationFailure(error.message),
+      );
+    } on AuthNetworkException {
+      return (temporaryPassword: null, failure: const NetworkFailure());
+    } on AuthServerException {
+      return (temporaryPassword: null, failure: const NetworkFailure());
     }
   }
 

@@ -22,13 +22,30 @@ abstract final class PanelMenuDestinations {
     icon: Icons.home_outlined,
   );
 
+  static const rehearsals = PanelMenuDestination(
+    id: 'rehearsals',
+    label: 'Ensayos',
+    icon: Icons.event_note_outlined,
+  );
+
+  static const attendances = PanelMenuDestination(
+    id: 'attendances',
+    label: 'Asistencias',
+    icon: Icons.fact_check_outlined,
+  );
+
   static const settings = PanelMenuDestination(
     id: 'settings',
     label: 'Ajustes',
     icon: Icons.settings_outlined,
   );
 
-  static const all = <PanelMenuDestination>[home, settings];
+  static const all = <PanelMenuDestination>[
+    home,
+    rehearsals,
+    attendances,
+    settings,
+  ];
 }
 
 class PanelDrawer extends StatelessWidget {

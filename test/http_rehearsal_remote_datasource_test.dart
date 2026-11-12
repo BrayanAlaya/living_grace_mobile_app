@@ -72,6 +72,7 @@ void main() {
         );
       }
       expect(request.url.path, '/ministries/2/members');
+      expect(request.url.queryParameters['status'], 'ACTIVE');
       return http.Response(
         jsonEncode({
           'ministry_id': 2,
@@ -81,6 +82,7 @@ void main() {
               'user_id': 4,
               'first_name': 'Ana',
               'last_name': 'Paz',
+              'status': 'ACTIVE',
               'functions': ['Voz'],
             },
           ],
@@ -102,6 +104,63 @@ void main() {
     expect(ministries.single.name, 'Alabanza');
     expect(members.single.ministryMemberId, 8);
     expect(members.single.toDomain().fullName, 'Ana Paz');
+    expect(members.single.status, MembershipStatus.active);
+  });
+
+  test('lista miembros pendientes y actualiza el estado', () async {
+    final store = InMemoryTokenStore();
+    await store.saveAccessToken('abc');
+    var patched = false;
+
+    final client = MockClient((request) async {
+      if (request.method == 'GET') {
+        expect(request.url.path, '/ministries/2/members');
+        expect(request.url.queryParameters['status'], 'PENDING');
+        return http.Response(
+          jsonEncode({
+            'ministry_id': 2,
+            'members': [
+              {
+                'ministry_member_id': 8,
+                'user_id': 4,
+                'first_name': 'Ana',
+                'last_name': 'Paz',
+                'status': 'PENDING',
+                'functions': ['Voz'],
+              },
+            ],
+          }),
+          200,
+        );
+      }
+      expect(request.method, 'PATCH');
+      expect(request.url.path, '/ministries/2/members/8/status');
+      expect(jsonDecode(request.body), {'status': 'INACTIVE'});
+      patched = true;
+      return http.Response(
+        jsonEncode({
+          'ministry_id': 2,
+          'ministry_member_id': 8,
+          'status': 'INACTIVE',
+        }),
+        200,
+      );
+    });
+
+    final dataSource = HttpRehearsalRemoteDataSource(
+      tokenStore: store,
+      client: client,
+      baseUrl: 'https://api.test',
+    );
+
+    final pending = await dataSource.listMembers(
+      2,
+      status: MembershipStatus.pending,
+    );
+    expect(pending.single.status, MembershipStatus.pending);
+
+    await dataSource.updateMemberStatus(2, 8, MembershipStatus.inactive);
+    expect(patched, isTrue);
   });
 
   test('actualiza el ensayo sin enviar el ministerio', () async {

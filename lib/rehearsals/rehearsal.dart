@@ -1,3 +1,5 @@
+import '../attendance/attendance_status.dart';
+
 /// Persona convocada a un ensayo (`participants` de `AdminRehearsalDetail`).
 class RehearsalParticipant {
   const RehearsalParticipant({
@@ -6,6 +8,8 @@ class RehearsalParticipant {
     required this.firstName,
     required this.lastName,
     this.functions = const [],
+    this.arrivalAt,
+    this.attendanceStatus,
   });
 
   final int ministryMemberId;
@@ -13,6 +17,8 @@ class RehearsalParticipant {
   final String firstName;
   final String lastName;
   final List<String> functions;
+  final DateTime? arrivalAt;
+  final AttendanceStatus? attendanceStatus;
 
   String get fullName => '$firstName $lastName'.trim();
 
@@ -26,6 +32,8 @@ class RehearsalParticipant {
         for (final item in (json['functions'] as List?) ?? const [])
           if (item is String && item.trim().isNotEmpty) item.trim(),
       ],
+      arrivalAt: _date(json['arrival_at']),
+      attendanceStatus: AttendanceStatusLabel.fromApi(json['attendance_status']),
     );
   }
 }
@@ -45,6 +53,8 @@ class Rehearsal {
     this.participantCount,
     this.participants = const [],
     this.showsMembers = false,
+    this.myAttendanceStatus,
+    this.myArrivalAt,
   });
 
   final int id;
@@ -66,8 +76,12 @@ class Rehearsal {
   /// El detalle de administrador trae `participants`, aunque la lista esté vacía.
   final bool showsMembers;
 
+  /// Asistencia del miembro (`MemberRehearsalItem` / `my_attendance`).
+  final AttendanceStatus? myAttendanceStatus;
+  final DateTime? myArrivalAt;
+
   factory Rehearsal.fromJson(Map<String, dynamic> json) {
-    final creator = json['created_by'] as Map<String, dynamic>;
+    final creator = json['created_by'];
     final ministry = json['ministry'] as Map<String, dynamic>;
     final rawParticipants = json['participants'] as List?;
     final participants = [
@@ -77,14 +91,23 @@ class Rehearsal {
         else if (item is Map)
           RehearsalParticipant.fromJson(Map<String, dynamic>.from(item)),
     ];
+    final mine = json['my_attendance'];
+    final myStatus = mine is Map
+        ? AttendanceStatusLabel.fromApi(mine['attendance_status'])
+        : AttendanceStatusLabel.fromApi(json['attendance_status']);
+    final myArrival = mine is Map
+        ? _date(mine['arrival_at'])
+        : _date(json['arrival_at']);
 
     return Rehearsal(
-      id: json['id'] as int,
+      id: (json['id'] ?? json['rehearsal_id']) as int,
       name: json['name'] as String,
       description: json['description'] as String?,
       ministryId: ministry['id'] as int,
       ministryName: ministry['name'] as String,
-      leaderName: '${creator['first_name']} ${creator['last_name']}',
+      leaderName: creator is Map
+          ? '${creator['first_name']} ${creator['last_name']}'.trim()
+          : '',
       startAt: DateTime.parse(json['start_at'] as String).toLocal(),
       endAt: DateTime.parse(json['end_at'] as String).toLocal(),
       toleranceMinutes: json['tolerance_minutes'] as int,
@@ -93,6 +116,8 @@ class Rehearsal {
           (rawParticipants == null ? null : participants.length),
       participants: participants,
       showsMembers: json.containsKey('participants'),
+      myAttendanceStatus: myStatus,
+      myArrivalAt: myArrival,
     );
   }
 
@@ -126,6 +151,11 @@ const _weekdays = [
 
 bool isSameDay(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+DateTime? _date(Object? raw) {
+  if (raw is! String || raw.isEmpty) return null;
+  return DateTime.tryParse(raw)?.toLocal();
 }
 
 /// "11 abril"

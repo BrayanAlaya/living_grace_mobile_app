@@ -15,6 +15,7 @@ class UserProfile {
     this.phone,
     this.birthDate,
     this.memberships = const [],
+    this.isGlobalAdmin = false,
   });
 
   final String firstName;
@@ -24,6 +25,7 @@ class UserProfile {
   final String? birthDate;
   final String createdAt;
   final List<ProfileMembership> memberships;
+  final bool isGlobalAdmin;
 
   String get fullName => '$firstName $lastName'.trim();
 }

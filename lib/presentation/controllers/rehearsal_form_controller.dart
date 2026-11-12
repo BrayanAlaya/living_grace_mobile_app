@@ -10,6 +10,8 @@ class RehearsalFormController extends ChangeNotifier {
 
   final RehearsalRepository _repository;
 
+  RehearsalRepository get repository => _repository;
+
   List<MinistryOption> ministries = const [];
   List<MinistryMember> members = const [];
   bool loadingMinistries = false;
@@ -46,12 +48,18 @@ class RehearsalFormController extends ChangeNotifier {
     failure = null;
     notifyListeners();
 
-    final result = await _repository.listMembers(id);
+    final result = await _repository.listMembers(
+      id,
+      status: MembershipStatus.active,
+    );
     if (ministryId != id) return;
 
     loadingMembers = false;
     failure = result.failure;
-    members = result.members ?? const [];
+    members = [
+      for (final member in result.members ?? const [])
+        if (member.status == MembershipStatus.active) member,
+    ];
     notifyListeners();
   }
 

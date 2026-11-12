@@ -26,15 +26,39 @@ class ApiRehearsalRepository implements RehearsalRepository {
 
   @override
   Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
-  listMembers(int ministryId) async {
+  listMembers(
+    int ministryId, {
+    MembershipStatus status = MembershipStatus.active,
+  }) async {
     try {
-      final items = await _remoteDataSource.listMembers(ministryId);
+      final items = await _remoteDataSource.listMembers(
+        ministryId,
+        status: status,
+      );
       return (
         members: [for (final item in items) item.toDomain()],
         failure: null,
       );
     } on RehearsalRemoteException catch (error) {
       return (members: null, failure: _map(error));
+    }
+  }
+
+  @override
+  Future<RehearsalFailure?> updateMemberStatus(
+    int ministryId,
+    int membershipId,
+    MembershipStatus status,
+  ) async {
+    try {
+      await _remoteDataSource.updateMemberStatus(
+        ministryId,
+        membershipId,
+        status,
+      );
+      return null;
+    } on RehearsalRemoteException catch (error) {
+      return _map(error);
     }
   }
 

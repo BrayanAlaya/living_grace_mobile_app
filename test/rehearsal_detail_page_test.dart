@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:living_grace/attendance/attendance_qr.dart';
+import 'package:living_grace/attendance/attendance_qr_api.dart';
 import 'package:living_grace/data/session/in_memory_token_store.dart';
 import 'package:living_grace/domain/entities/rehearsal_draft.dart';
 import 'package:living_grace/domain/failures/rehearsal_failure.dart';
@@ -39,6 +41,7 @@ void main() {
     expect(rehearsal.ministryId, 3);
     expect(rehearsal.showsMembers, isTrue);
     expect(rehearsal.participants.single.fullName, 'Ana Paz');
+    expect(rehearsal.participants.single.attendanceStatus, isNull);
     expect(rehearsal.participantCount, 1);
   });
 
@@ -161,8 +164,55 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ensayo general'), findsNothing);
-    expect(find.text('No hay próximos ensayos.'), findsOneWidget);
+    expect(find.text('No hay ensayos.'), findsOneWidget);
     expect(api.listFetches, 2);
+  });
+
+  testWidgets('el usuario marca asistencia escaneando el QR', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final qrApi = _CountingQrApi();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RehearsalDetailPage(
+          api: _DetailApi(),
+          rehearsalId: 7,
+          attendanceApi: qrApi,
+          scannerBuilder: (onCode) => TextButton(
+            onPressed: () => onCode(
+              'living-grace://attendance?rehearsalId=7&token=sim',
+            ),
+            child: const Text('Simular QR'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Marcar asistencia'), findsOneWidget);
+    expect(find.text('Eliminar'), findsNothing);
+    expect(find.text('Editar'), findsNothing);
+
+    await tester.tap(find.text('Marcar asistencia'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Buscando código...'), findsOneWidget);
+    expect(find.text('Escanea el Código QR\nde ensayo'), findsOneWidget);
+
+    await tester.tap(find.text('Simular QR'));
+    await tester.tap(find.text('Simular QR'), warnIfMissed: false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(qrApi.checkIns, 1);
+    expect(find.text('Asistencia registrada'), findsOneWidget);
+    expect(
+      find.text('Se ha registrado tu asistencia correctamente.'),
+      findsOneWidget,
+    );
+    expect(find.text('Llegaste tarde.'), findsOneWidget);
   });
 }
 
@@ -223,9 +273,34 @@ class _ListApi extends RehearsalApi {
   final List<Rehearsal> items = [];
 
   @override
-  Future<List<Rehearsal>> fetchUpcoming() async {
+  Future<List<Rehearsal>> fetchAll() async {
     listFetches++;
     return List<Rehearsal>.of(items);
+  }
+
+  @override
+  Future<List<MinistryOption>> listMinistries() async {
+    return const [MinistryOption(id: 1, name: 'Alabanza')];
+  }
+
+  @override
+  Future<({List<Rehearsal> items, int total})> fetchPage({
+    int limit = 20,
+    int offset = 0,
+    int? ministryId,
+  }) async {
+    listFetches++;
+    final filtered = [
+      for (final item in items)
+        if (ministryId == null || item.ministryId == ministryId) item,
+    ];
+    final end = (offset + limit).clamp(0, filtered.length);
+    return (
+      items: offset >= filtered.length
+          ? const <Rehearsal>[]
+          : filtered.sublist(offset, end),
+      total: filtered.length,
+    );
   }
 
   @override
@@ -236,6 +311,21 @@ class _ListApi extends RehearsalApi {
   @override
   Future<void> delete(int id) async {
     items.removeWhere((item) => item.id == id);
+  }
+}
+
+class _CountingQrApi extends AttendanceQrApi {
+  _CountingQrApi() : super(delay: Duration.zero);
+
+  int checkIns = 0;
+
+  @override
+  Future<AttendanceCheckIn> checkIn({
+    required Rehearsal rehearsal,
+    required String payload,
+  }) async {
+    checkIns++;
+    return super.checkIn(rehearsal: rehearsal, payload: payload);
   }
 }
 
@@ -271,7 +361,10 @@ class _QuietRepository implements RehearsalRepository {
 
   @override
   Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
-  listMembers(int ministryId) async {
+  listMembers(
+    int ministryId, {
+    MembershipStatus status = MembershipStatus.active,
+  }) async {
     return (
       members: const [
         MinistryMember(
@@ -283,6 +376,15 @@ class _QuietRepository implements RehearsalRepository {
       ],
       failure: null,
     );
+  }
+
+  @override
+  Future<RehearsalFailure?> updateMemberStatus(
+    int ministryId,
+    int membershipId,
+    MembershipStatus status,
+  ) async {
+    return null;
   }
 
   @override

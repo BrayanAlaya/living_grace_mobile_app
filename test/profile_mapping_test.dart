@@ -16,6 +16,7 @@ void main() {
       'phone': null,
       'birth_date': null,
       'created_at': '2026-08-12T12:00:00Z',
+      'is_global_admin': false,
       'memberships': [
         {
           'ministry': 'Alabanza',
@@ -29,6 +30,21 @@ void main() {
     expect(profile.phone, isNull);
     expect(profile.memberships.single.ministry, 'Alabanza');
     expect(profile.memberships.single.functions, ['Guitarrista']);
+    expect(profile.isGlobalAdmin, isFalse);
+  });
+
+  test('is_global_admin del perfil marca administrador', () {
+    final profile = UserProfileDto.fromJson({
+      'first_name': 'Luis',
+      'last_name': 'Rey',
+      'email': 'luis@livinggrace.com',
+      'phone': null,
+      'birth_date': null,
+      'created_at': '2026-08-12T12:00:00Z',
+      'is_global_admin': true,
+    }).toDomain();
+
+    expect(profile.isGlobalAdmin, isTrue);
   });
 
   test('una fecha calendario no cambia de día', () {

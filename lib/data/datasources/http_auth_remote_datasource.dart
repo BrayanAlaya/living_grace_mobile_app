@@ -46,6 +46,79 @@ class HttpAuthRemoteDataSource implements AuthRemoteDataSource {
     }
   }
 
+  @override
+  Future<void> changePassword({
+    required String accessToken,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/auth/change-password');
+    try {
+      final response = await _client
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $accessToken',
+            },
+            body: jsonEncode({
+              'current_password': currentPassword,
+              'new_password': newPassword,
+            }),
+          )
+          .timeout(_timeout);
+      if (response.statusCode == 204) return;
+      _throwFor(response);
+    } on AuthRemoteException {
+      rethrow;
+    } on Object catch (error) {
+      throw AuthNetworkException(error);
+    }
+  }
+
+  @override
+  Future<String> resetPassword({
+    required String accessToken,
+    required int userId,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/users/$userId/reset-password');
+    try {
+      final response = await _client
+          .post(
+            uri,
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $accessToken',
+            },
+            body: '{}',
+          )
+          .timeout(_timeout);
+      if (response.statusCode != 200) _throwFor(response);
+      final body = jsonDecode(response.body);
+      if (body is! Map || body['temporary_password'] is! String) {
+        throw const AuthServerException(200);
+      }
+      return body['temporary_password'] as String;
+    } on AuthRemoteException {
+      rethrow;
+    } on Object catch (error) {
+      throw AuthNetworkException(error);
+    }
+  }
+
+  Never _throwFor(http.Response response) {
+    final status = response.statusCode;
+    if (status == 401 || status == 403) {
+      throw const AuthUnauthorizedException();
+    }
+    if (status == 422) {
+      throw AuthValidationException(_parseValidationMessage(response.body));
+    }
+    throw AuthServerException(status);
+  }
+
   TokenResponseDto _mapLoginResponse(http.Response response) {
     final status = response.statusCode;
 

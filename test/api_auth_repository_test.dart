@@ -16,6 +16,19 @@ class _FakeAuthRemote implements AuthRemoteDataSource {
 
   @override
   Future<TokenResponseDto> login(LoginRequestDto request) => _handler(request);
+
+  @override
+  Future<void> changePassword({
+    required String accessToken,
+    required String currentPassword,
+    required String newPassword,
+  }) async {}
+
+  @override
+  Future<String> resetPassword({
+    required String accessToken,
+    required int userId,
+  }) async => 'temp-pass';
 }
 
 void main() {
@@ -37,7 +50,7 @@ void main() {
 
     expect(result.failure, isNull);
     expect(result.user?.email, 'demo@livinggrace.com');
-    expect(result.user?.role, UserRole.admin);
+    expect(result.user?.role, UserRole.user);
     expect(await store.readAccessToken(), 'tok_123');
   });
 
@@ -112,4 +125,48 @@ void main() {
       'String should have at most 128 characters',
     );
   });
+
+  test('resetPassword usa el user_id y devuelve la clave temporal', () async {
+    final store = InMemoryTokenStore();
+    await store.saveAccessToken('tok');
+    var requestedId = 0;
+    final repository = ApiAuthRepository(
+      remoteDataSource: _ResetRemote((userId) {
+        requestedId = userId;
+        return 'Temp#1234';
+      }),
+      tokenStore: store,
+    );
+
+    final result = await repository.resetPassword(4);
+    expect(requestedId, 4);
+    expect(result.failure, isNull);
+    expect(result.temporaryPassword, 'Temp#1234');
+  });
+}
+
+class _ResetRemote implements AuthRemoteDataSource {
+  _ResetRemote(this._reset);
+
+  final String Function(int userId) _reset;
+
+  @override
+  Future<TokenResponseDto> login(LoginRequestDto request) async {
+    return const TokenResponseDto(accessToken: 'tok');
+  }
+
+  @override
+  Future<void> changePassword({
+    required String accessToken,
+    required String currentPassword,
+    required String newPassword,
+  }) async {}
+
+  @override
+  Future<String> resetPassword({
+    required String accessToken,
+    required int userId,
+  }) async {
+    return _reset(userId);
+  }
 }

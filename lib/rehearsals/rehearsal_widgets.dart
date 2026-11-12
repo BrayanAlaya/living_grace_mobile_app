@@ -72,16 +72,21 @@ class RehearsalHeader extends StatelessWidget {
 
 /// Barra de búsqueda gris redondeada.
 class RehearsalSearchField extends StatelessWidget {
-  const RehearsalSearchField({super.key, required this.onChanged});
+  const RehearsalSearchField({
+    super.key,
+    required this.onChanged,
+    this.hintText = 'Buscar horarios',
+  });
 
   final ValueChanged<String> onChanged;
+  final String hintText;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       onChanged: onChanged,
       decoration: InputDecoration(
-        hintText: 'Buscar horarios',
+        hintText: hintText,
         prefixIcon: const Icon(Icons.search),
         filled: true,
         fillColor: AppColors.inputFill,
@@ -217,9 +222,14 @@ class RehearsalCard extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              DatePill(text: formatDayMonth(rehearsal.startAt)),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: DatePill(text: formatDayMonth(rehearsal.startAt)),
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(
                 isToday ? 'Hoy' : formatWeekday(rehearsal.startAt),
                 style: const TextStyle(

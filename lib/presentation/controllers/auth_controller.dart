@@ -56,6 +56,27 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<AuthFailure?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final error = await _authRepository.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+    if (error == null && user != null) {
+      user = user!.copyWith(mustChangePassword: false);
+      notifyListeners();
+    }
+    return error;
+  }
+
+  Future<({String? temporaryPassword, AuthFailure? failure})> resetPassword(
+    int userId,
+  ) {
+    return _authRepository.resetPassword(userId);
+  }
+
   Future<void> logout() async {
     await _authRepository.logout();
     user = null;

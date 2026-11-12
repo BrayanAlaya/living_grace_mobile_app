@@ -23,13 +23,17 @@ class MinistryMemberDto {
     required this.ministryMemberId,
     required this.firstName,
     required this.lastName,
+    this.userId,
     this.functions = const [],
+    this.status = MembershipStatus.active,
   });
 
   final int ministryMemberId;
+  final int? userId;
   final String firstName;
   final String lastName;
   final List<String> functions;
+  final MembershipStatus status;
 
   factory MinistryMemberDto.fromJson(Map<String, dynamic> json) {
     final id = json['ministry_member_id'];
@@ -38,20 +42,29 @@ class MinistryMemberDto {
     if (id is! int || firstName is! String || lastName is! String) {
       throw const FormatException('MinistryMemberInfo');
     }
+    final userId = json['user_id'];
     return MinistryMemberDto(
       ministryMemberId: id,
+      userId: switch (userId) {
+        int value => value,
+        num value => value.toInt(),
+        _ => null,
+      },
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       functions: _strings(json['functions']),
+      status: MembershipStatus.fromApi(json['status']),
     );
   }
 
   MinistryMember toDomain() {
     return MinistryMember(
       ministryMemberId: ministryMemberId,
+      userId: userId,
       firstName: firstName,
       lastName: lastName,
       functions: functions,
+      status: status,
     );
   }
 }

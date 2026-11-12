@@ -9,13 +9,16 @@ import 'settings_menu.dart';
 abstract final class SettingsCatalog {
   static const adminSectionId = 'admin';
 
-  static List<SettingsSection> forRole(UserRole role) {
-    if (role.isAdmin) return sections;
+  static List<SettingsSection> forAdmin(bool isAdmin) {
+    if (isAdmin) return sections;
     return [
       for (final section in sections)
         if (section.id != adminSectionId) section,
     ];
   }
+
+  static List<SettingsSection> forRole(UserRole role) =>
+      forAdmin(role.isAdmin);
 
   static const sections = <SettingsSection>[
     SettingsSection(

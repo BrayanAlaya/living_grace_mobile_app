@@ -6,5 +6,14 @@ import '../failures/auth_failure.dart';
 abstract interface class AuthRepository {
   Future<({User? user, AuthFailure? failure})> login(AuthCredentials credentials);
 
+  Future<AuthFailure?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
+
+  Future<({String? temporaryPassword, AuthFailure? failure})> resetPassword(
+    int userId,
+  );
+
   Future<void> logout();
 }

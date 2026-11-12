@@ -16,7 +16,6 @@ class SettingsPage extends StatelessWidget {
     required this.onBack,
     required this.onLogout,
     required this.onItemSelected,
-    this.onEditPhoto,
     this.profileImageUrl,
     this.sections = SettingsCatalog.sections,
   });
@@ -25,7 +24,6 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onLogout;
   final ValueChanged<String> onItemSelected;
-  final VoidCallback? onEditPhoto;
   final String? profileImageUrl;
   final List<SettingsSection> sections;
 
@@ -46,7 +44,6 @@ class SettingsPage extends StatelessWidget {
               displayName: displayName,
               onBack: onBack,
               profileImageUrl: profileImageUrl,
-              onEditPhoto: onEditPhoto,
             ),
             const SizedBox(height: 28),
             for (final section in sections) ...[

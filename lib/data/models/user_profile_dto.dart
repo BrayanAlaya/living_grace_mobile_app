@@ -35,6 +35,7 @@ class UserProfileDto {
     this.phone,
     this.birthDate,
     this.memberships = const [],
+    this.isGlobalAdmin = false,
   });
 
   final String firstName;
@@ -44,6 +45,7 @@ class UserProfileDto {
   final String? birthDate;
   final String createdAt;
   final List<ProfileMembershipDto> memberships;
+  final bool isGlobalAdmin;
 
   factory UserProfileDto.fromJson(Map<String, dynamic> json) {
     final firstName = json['first_name'];
@@ -66,6 +68,7 @@ class UserProfileDto {
       birthDate: _optionalText(json['birth_date']),
       createdAt: createdAt,
       memberships: _memberships(json['memberships']),
+      isGlobalAdmin: json['is_global_admin'] == true,
     );
   }
 
@@ -78,6 +81,7 @@ class UserProfileDto {
       birthDate: birthDate,
       createdAt: createdAt,
       memberships: [for (final item in memberships) item.toDomain()],
+      isGlobalAdmin: isGlobalAdmin,
     );
   }
 }

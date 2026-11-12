@@ -107,7 +107,10 @@ void main() {
 
     expect(find.text('Miembros'), findsOneWidget);
     expect(find.text('Ana Paz'), findsOneWidget);
+    expect(find.text('Pedro Luz'), findsNothing);
+    expect(find.text('Inés Mar'), findsNothing);
     expect(repository.requestedMinistryId, 1);
+    expect(repository.requestedStatus, MembershipStatus.active);
 
     await tester.tap(find.text('Ana Paz'));
     await tester.pump();
@@ -256,6 +259,7 @@ class _UpdatingRepository extends _ReadyRehearsalRepository {
 
 class _ReadyRehearsalRepository implements RehearsalRepository {
   int? requestedMinistryId;
+  MembershipStatus? requestedStatus;
 
   @override
   Future<RehearsalFailure?> create(RehearsalDraft draft) async => null;
@@ -270,8 +274,12 @@ class _ReadyRehearsalRepository implements RehearsalRepository {
 
   @override
   Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
-  listMembers(int ministryId) async {
+  listMembers(
+    int ministryId, {
+    MembershipStatus status = MembershipStatus.active,
+  }) async {
     requestedMinistryId = ministryId;
+    requestedStatus = status;
     return (
       members: const [
         MinistryMember(
@@ -279,10 +287,34 @@ class _ReadyRehearsalRepository implements RehearsalRepository {
           firstName: 'Ana',
           lastName: 'Paz',
           functions: ['Voz'],
+          status: MembershipStatus.active,
+        ),
+        MinistryMember(
+          ministryMemberId: 11,
+          firstName: 'Pedro',
+          lastName: 'Luz',
+          functions: ['Bajo'],
+          status: MembershipStatus.pending,
+        ),
+        MinistryMember(
+          ministryMemberId: 12,
+          firstName: 'Inés',
+          lastName: 'Mar',
+          functions: ['Teclado'],
+          status: MembershipStatus.inactive,
         ),
       ],
       failure: null,
     );
+  }
+
+  @override
+  Future<RehearsalFailure?> updateMemberStatus(
+    int ministryId,
+    int membershipId,
+    MembershipStatus status,
+  ) async {
+    return null;
   }
 
   @override
@@ -309,7 +341,10 @@ class _MultiMinistryRepository implements RehearsalRepository {
 
   @override
   Future<({List<MinistryMember>? members, RehearsalFailure? failure})>
-  listMembers(int ministryId) async {
+  listMembers(
+    int ministryId, {
+    MembershipStatus status = MembershipStatus.active,
+  }) async {
     if (ministryId == 2) {
       return (
         members: const [
@@ -334,6 +369,15 @@ class _MultiMinistryRepository implements RehearsalRepository {
       ],
       failure: null,
     );
+  }
+
+  @override
+  Future<RehearsalFailure?> updateMemberStatus(
+    int ministryId,
+    int membershipId,
+    MembershipStatus status,
+  ) async {
+    return null;
   }
 
   @override

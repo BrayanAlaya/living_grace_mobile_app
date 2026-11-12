@@ -1,6 +1,4 @@
-/// Rol de sesión. `1` es admin y `2` es usuario.
-///
-/// Provisional: si el login no trae `idRol`, se asume admin para pruebas.
+/// Rol residual del token. El panel admin usa `is_global_admin` de `/users/me`.
 enum UserRole {
   admin,
   user;
@@ -16,8 +14,8 @@ enum UserRole {
     };
 
     return switch (id) {
-      2 => UserRole.user,
-      _ => UserRole.admin,
+      1 => UserRole.admin,
+      _ => UserRole.user,
     };
   }
 }

@@ -8,7 +8,7 @@ class LoginUserMapper {
   User fromLogin({
     required String identifier,
     required String accessToken,
-    UserRole role = UserRole.admin,
+    UserRole role = UserRole.user,
   }) {
     final claims = _decodeJwtPayload(accessToken);
     final email = _stringClaim(claims, const ['email']) ?? identifier;

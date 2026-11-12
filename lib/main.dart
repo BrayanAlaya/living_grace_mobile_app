@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/config/api_config.dart';
+import 'core/navigation/app_route_observer.dart';
 import 'core/network/api_client.dart';
 import 'core/session/token_store.dart';
 import 'core/theme/app_theme.dart';
@@ -18,6 +19,7 @@ import 'presentation/controllers/rehearsal_form_controller.dart';
 import 'register/register_api.dart';
 import 'register/register_controller.dart';
 import 'register/register_validator.dart';
+import 'dashboard/dashboard_api.dart';
 import 'rehearsals/rehearsal_api.dart';
 
 void main() {
@@ -60,6 +62,7 @@ void main() {
       registerController: registerController,
       registerValidator: registerValidator,
       rehearsalApi: RehearsalApi(tokenStore: tokenStore),
+      dashboardApi: DashboardApi(tokenStore: tokenStore),
     ),
   );
 }
@@ -73,6 +76,7 @@ class LivingGraceApp extends StatelessWidget {
     required this.registerController,
     required this.registerValidator,
     this.rehearsalApi,
+    this.dashboardApi,
   });
 
   final AuthController authController;
@@ -81,6 +85,7 @@ class LivingGraceApp extends StatelessWidget {
   final RegisterController registerController;
   final RegisterValidator registerValidator;
   final RehearsalApi? rehearsalApi;
+  final DashboardApi? dashboardApi;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +93,7 @@ class LivingGraceApp extends StatelessWidget {
       title: 'Living Grace',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      navigatorObservers: [appRouteObserver],
       home: AppShell(
         authController: authController,
         profileController: profileController,
@@ -96,6 +102,7 @@ class LivingGraceApp extends StatelessWidget {
         registerValidator: registerValidator,
         rehearsalApi:
             rehearsalApi ?? RehearsalApi(tokenStore: InMemoryTokenStore()),
+        dashboardApi: dashboardApi,
       ),
     );
   }
