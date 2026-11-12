@@ -20,6 +20,8 @@ import 'register/register_api.dart';
 import 'register/register_controller.dart';
 import 'register/register_validator.dart';
 import 'dashboard/dashboard_api.dart';
+import 'notifications/notification_api.dart';
+import 'notifications/notification_controller.dart';
 import 'rehearsals/rehearsal_api.dart';
 
 void main() {
@@ -63,6 +65,9 @@ void main() {
       registerValidator: registerValidator,
       rehearsalApi: RehearsalApi(tokenStore: tokenStore),
       dashboardApi: DashboardApi(tokenStore: tokenStore),
+      notifications: NotificationController(
+        api: NotificationApi(tokenStore: tokenStore),
+      ),
     ),
   );
 }
@@ -77,6 +82,7 @@ class LivingGraceApp extends StatelessWidget {
     required this.registerValidator,
     this.rehearsalApi,
     this.dashboardApi,
+    this.notifications,
   });
 
   final AuthController authController;
@@ -86,6 +92,7 @@ class LivingGraceApp extends StatelessWidget {
   final RegisterValidator registerValidator;
   final RehearsalApi? rehearsalApi;
   final DashboardApi? dashboardApi;
+  final NotificationController? notifications;
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +110,7 @@ class LivingGraceApp extends StatelessWidget {
         rehearsalApi:
             rehearsalApi ?? RehearsalApi(tokenStore: InMemoryTokenStore()),
         dashboardApi: dashboardApi,
+        notifications: notifications,
       ),
     );
   }

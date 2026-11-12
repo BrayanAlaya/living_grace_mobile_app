@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../notifications/app_notification.dart';
+import '../../notifications/notification_controller.dart';
+import 'notification_bell.dart';
 
 /// Header del panel: menú hamburguesa (izquierda) + perfil (derecha).
 class PanelHeader extends StatelessWidget {
@@ -9,11 +12,15 @@ class PanelHeader extends StatelessWidget {
     required this.onMenuPressed,
     required this.onProfilePressed,
     this.profileImageUrl,
+    this.notifications,
+    this.onNotificationOpen,
   });
 
   final VoidCallback onMenuPressed;
   final VoidCallback onProfilePressed;
   final String? profileImageUrl;
+  final NotificationController? notifications;
+  final ValueChanged<AppNotification>? onNotificationOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +37,20 @@ class PanelHeader extends StatelessWidget {
               color: AppColors.black,
             ),
           ),
-          _ProfileButton(
-            onPressed: onProfilePressed,
-            imageUrl: profileImageUrl,
+          Row(
+            children: [
+              if (notifications != null && onNotificationOpen != null) ...[
+                NotificationBell(
+                  controller: notifications!,
+                  onOpen: onNotificationOpen!,
+                ),
+                const SizedBox(width: 10),
+              ],
+              _ProfileButton(
+                onPressed: onProfilePressed,
+                imageUrl: profileImageUrl,
+              ),
+            ],
           ),
         ],
       ),

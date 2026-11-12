@@ -11,6 +11,14 @@ abstract final class ApiConfig {
     return raw.replaceAll(RegExp(r'/$'), '');
   }
 
+  /// Misma host que [baseUrl], con esquema WebSocket.
+  static String get wsBaseUrl {
+    final http = baseUrl;
+    if (http.startsWith('https://')) return 'wss://${http.substring(8)}';
+    if (http.startsWith('http://')) return 'ws://${http.substring(7)}';
+    return http;
+  }
+
   /// Render puede tardar en despertar la primera petición.
   static const Duration timeout = Duration(seconds: 60);
 }

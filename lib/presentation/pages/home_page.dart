@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/layouts/home_layout.dart';
 import '../../dashboard/dashboard_api.dart';
 import '../../dashboard/dashboard_home.dart';
+import '../../notifications/app_notification.dart';
+import '../../notifications/notification_controller.dart';
 import '../../rehearsals/rehearsal_api.dart';
 import '../controllers/rehearsal_form_controller.dart';
 import '../widgets/panel_drawer.dart';
@@ -19,6 +21,8 @@ class HomePage extends StatelessWidget {
     this.loadingName = false,
     this.rehearsalFormController,
     this.canManageRehearsals = false,
+    this.notifications,
+    this.onNotificationOpen,
   });
 
   /// Nombre de pila del perfil. No usa el usuario de inicio de sesión.
@@ -30,6 +34,8 @@ class HomePage extends StatelessWidget {
   final bool canManageRehearsals;
   final VoidCallback onOpenSettings;
   final ValueChanged<String> onDestinationSelected;
+  final NotificationController? notifications;
+  final ValueChanged<AppNotification>? onNotificationOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +43,8 @@ class HomePage extends StatelessWidget {
       currentDestinationId: PanelMenuDestinations.home.id,
       onDestinationSelected: onDestinationSelected,
       onProfilePressed: onOpenSettings,
+      notifications: notifications,
+      onNotificationOpen: onNotificationOpen,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         child: DashboardHome(

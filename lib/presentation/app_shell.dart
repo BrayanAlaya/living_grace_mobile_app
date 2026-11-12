@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../domain/entities/register_data.dart';
@@ -11,7 +13,10 @@ import '../attendance/attendance_qr_api.dart';
 import '../attendance/generate_qr_page.dart';
 import '../core/layouts/home_layout.dart';
 import '../dashboard/dashboard_api.dart';
+import '../notifications/app_notification.dart';
+import '../notifications/notification_controller.dart';
 import '../rehearsals/rehearsal_api.dart';
+import '../rehearsals/rehearsal_detail_page.dart';
 import '../rehearsals/rehearsals_page.dart';
 import 'admin/admin_catalog.dart';
 import 'controllers/auth_controller.dart';
@@ -23,6 +28,7 @@ import 'pages/create_rehearsal_page.dart';
 import 'pages/forgot_password_page.dart';
 import 'pages/home_page.dart';
 import 'pages/ministry_members_page.dart';
+import 'pages/notifications_page.dart';
 import 'pages/login_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/register_page.dart';
@@ -66,6 +72,7 @@ class AppShell extends StatefulWidget {
     required this.registerValidator,
     required this.rehearsalApi,
     this.dashboardApi,
+    this.notifications,
   });
 
   final AuthController authController;
@@ -75,6 +82,7 @@ class AppShell extends StatefulWidget {
   final RegisterValidator registerValidator;
   final RehearsalApi rehearsalApi;
   final DashboardApi? dashboardApi;
+  final NotificationController? notifications;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -94,6 +102,7 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     _profile.addListener(_onProfileChanged);
     _register.addListener(_onRegisterChanged);
+    widget.notifications?.addListener(_onNotificationsChanged);
   }
 
   @override
@@ -107,12 +116,17 @@ class _AppShellState extends State<AppShell> {
       oldWidget.registerController.removeListener(_onRegisterChanged);
       _register.addListener(_onRegisterChanged);
     }
+    if (oldWidget.notifications != widget.notifications) {
+      oldWidget.notifications?.removeListener(_onNotificationsChanged);
+      widget.notifications?.addListener(_onNotificationsChanged);
+    }
   }
 
   @override
   void dispose() {
     _profile.removeListener(_onProfileChanged);
     _register.removeListener(_onRegisterChanged);
+    widget.notifications?.removeListener(_onNotificationsChanged);
     super.dispose();
   }
 
@@ -122,6 +136,15 @@ class _AppShellState extends State<AppShell> {
 
   void _onRegisterChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _onNotificationsChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final incoming = widget.notifications?.takeIncoming();
+    if (incoming != null) {
+      _showSnack(incoming.title);
+    }
   }
 
   void _goToLogin() {
@@ -189,7 +212,65 @@ class _AppShellState extends State<AppShell> {
       setState(() => _view = _AppView.changePassword);
       return;
     }
+    if (id == SettingsItemId.notifications) {
+      _openNotificationsPage();
+      return;
+    }
     _showSnack('Próximamente');
+  }
+
+  void _openNotificationsPage() {
+    final notifications = widget.notifications;
+    if (notifications == null) {
+      _showSnack('Próximamente');
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => NotificationsPage(
+          controller: notifications,
+          onBack: () => Navigator.of(context).pop(),
+          onOpen: _openNotification,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openNotification(AppNotification item) async {
+    if (item.isRehearsal && item.resourceId != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => RehearsalDetailPage(
+            api: widget.rehearsalApi,
+            rehearsalId: item.resourceId!,
+            formController: widget.rehearsalFormController,
+            canManage: _isAdmin,
+            attendanceApi: AttendanceQrApi(rehearsalApi: widget.rehearsalApi),
+          ),
+        ),
+      );
+      return;
+    }
+    if (item.isMembershipPending) {
+      if (!_isAdmin) {
+        _showSnack('No tienes acceso a los miembros del ministerio.');
+        return;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => MinistryMembersPage(
+            onBack: () => Navigator.of(context).pop(),
+            repository: widget.rehearsalFormController.repository,
+            onResetPassword: (userId) => _auth.resetPassword(userId),
+          ),
+        ),
+      );
+      return;
+    }
+    if (item.isMembershipApproved) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      _goToHome();
+    }
   }
 
   void _goToForgotPassword() {
@@ -270,6 +351,8 @@ class _AppShellState extends State<AppShell> {
       currentDestinationId: destinationId,
       onDestinationSelected: _onPanelDestinationSelected,
       onProfilePressed: _goToSettings,
+      notifications: widget.notifications,
+      onNotificationOpen: _openNotification,
       child: child,
     );
   }
@@ -295,6 +378,10 @@ class _AppShellState extends State<AppShell> {
         _view = _AppView.home;
       }
     });
+    if (success) {
+      final notifications = widget.notifications;
+      if (notifications != null) unawaited(notifications.start());
+    }
   }
 
   Future<void> _handleRegister(RegisterData data) async {
@@ -321,6 +408,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _handleLogout() async {
+    await widget.notifications?.stop();
     await _auth.logout();
     _profile.clear();
     if (!mounted) return;
@@ -378,6 +466,8 @@ class _AppShellState extends State<AppShell> {
         dashboardApi: widget.dashboardApi,
         rehearsalFormController: widget.rehearsalFormController,
         canManageRehearsals: _isAdmin,
+        notifications: widget.notifications,
+        onNotificationOpen: _openNotification,
       ),
       _AppView.rehearsals => _panel(
         destinationId: PanelMenuDestinations.rehearsals.id,

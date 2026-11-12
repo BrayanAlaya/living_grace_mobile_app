@@ -57,8 +57,15 @@ class RehearsalApi {
 
   /// `GET /rehearsals/{id}`
   Future<Rehearsal> fetchDetail(int id) async {
-    final json = await _send('GET', '/rehearsals/$id', expected: 200);
-    return Rehearsal.fromJson(json);
+    try {
+      final json = await _send('GET', '/rehearsals/$id', expected: 200);
+      return Rehearsal.fromJson(json);
+    } on _ApiFailure catch (error) {
+      if (error.statusCode == 404) {
+        throw const RehearsalNotFoundException();
+      }
+      rethrow;
+    }
   }
 
   /// `GET /ministries/registration-fields`
@@ -275,6 +282,10 @@ class RehearsalApi {
     }
     return 'No se pudo completar la solicitud (${response.statusCode}).';
   }
+}
+
+class RehearsalNotFoundException implements Exception {
+  const RehearsalNotFoundException();
 }
 
 class _ApiFailure implements Exception {

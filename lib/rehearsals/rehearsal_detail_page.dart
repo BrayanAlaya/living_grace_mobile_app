@@ -43,6 +43,7 @@ class _RehearsalDetailPageState extends State<RehearsalDetailPage> {
   Rehearsal? _rehearsal;
   bool _loading = true;
   bool _failed = false;
+  bool _missing = false;
   bool _deleting = false;
 
   @override
@@ -56,6 +57,7 @@ class _RehearsalDetailPageState extends State<RehearsalDetailPage> {
       setState(() {
         _loading = true;
         _failed = false;
+        _missing = false;
       });
     }
     try {
@@ -66,12 +68,13 @@ class _RehearsalDetailPageState extends State<RehearsalDetailPage> {
         _loading = false;
         _failed = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       final hadData = _rehearsal != null;
       setState(() {
         _loading = false;
         _failed = !hadData;
+        _missing = error is RehearsalNotFoundException;
       });
       if (hadData) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -239,12 +242,18 @@ class _RehearsalDetailPageState extends State<RehearsalDetailPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('No se pudo cargar el ensayo.'),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _load,
-                            child: const Text('Reintentar'),
+                          Text(
+                            _missing
+                                ? 'Este ensayo ya no está disponible.'
+                                : 'No se pudo cargar el ensayo.',
                           ),
+                          if (!_missing) ...[
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _load,
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
                         ],
                       ),
                     )

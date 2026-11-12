@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../notifications/app_notification.dart';
+import '../../notifications/notification_controller.dart';
 import '../../presentation/widgets/panel_drawer.dart';
 import '../../presentation/widgets/panel_header.dart';
 import '../theme/app_colors.dart';
@@ -15,6 +17,8 @@ class HomeLayout extends StatelessWidget {
     required this.onDestinationSelected,
     required this.onProfilePressed,
     this.profileImageUrl,
+    this.notifications,
+    this.onNotificationOpen,
   });
 
   final Widget child;
@@ -22,6 +26,8 @@ class HomeLayout extends StatelessWidget {
   final ValueChanged<String> onDestinationSelected;
   final VoidCallback onProfilePressed;
   final String? profileImageUrl;
+  final NotificationController? notifications;
+  final ValueChanged<AppNotification>? onNotificationOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +49,8 @@ class HomeLayout extends StatelessWidget {
                   onMenuPressed: () => Scaffold.of(context).openDrawer(),
                   onProfilePressed: onProfilePressed,
                   profileImageUrl: profileImageUrl,
+                  notifications: notifications,
+                  onNotificationOpen: onNotificationOpen,
                 ),
                 Expanded(child: child),
               ],
