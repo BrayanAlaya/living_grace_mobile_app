@@ -288,8 +288,6 @@ class _MonthlyCard extends StatelessWidget {
       _Slice('Presente', monthly.onTime, AppColors.success),
       _Slice('Tarde', monthly.late, AppColors.warning),
       _Slice('Ausente', monthly.absent, AppColors.error),
-      _Slice('Justificado', monthly.justified, AppColors.accent),
-      _Slice('Sin resolver', monthly.unresolved, AppColors.label),
     ];
     final attendance = monthly.attendanceRate;
     final punctuality = monthly.punctualityRate;

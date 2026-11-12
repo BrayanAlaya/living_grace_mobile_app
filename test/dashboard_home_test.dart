@@ -37,8 +37,6 @@ void main() {
             'on_time': 0,
             'late': 0,
             'absent': 0,
-            'justified': 0,
-            'unresolved': 0,
             'attendance_rate': null,
             'punctuality_rate': null,
           },
@@ -80,8 +78,8 @@ void main() {
     expect(find.text('Presente'), findsOneWidget);
     expect(find.text('Tarde'), findsWidgets);
     expect(find.text('Ausente'), findsOneWidget);
-    expect(find.text('Justificado'), findsOneWidget);
-    expect(find.text('Sin resolver'), findsOneWidget);
+    expect(find.text('Justificado'), findsNothing);
+    expect(find.text('Sin resolver'), findsNothing);
     expect(find.text('Noviembre 2026'), findsNothing);
     expect(find.text('Asistencias'), findsOneWidget);
     expect(find.text('Ensayo General'), findsOneWidget);
@@ -112,9 +110,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('100%'), findsOneWidget);
-    expect(find.text('9 de 10 ensayos · 7 miembros'), findsOneWidget);
-    expect(find.text('Sin resolver'), findsOneWidget);
+    expect(find.text('20%'), findsOneWidget);
+    expect(find.text('10 de 10 ensayos · 9 miembros'), findsOneWidget);
+    expect(find.text('Ausente'), findsOneWidget);
+    expect(find.text('Sin resolver'), findsNothing);
     expect(find.text('Asistencias'), findsNothing);
     expect(find.text('Ensayo General'), findsOneWidget);
   });
@@ -189,15 +188,13 @@ class _AdminDashboardApi extends DashboardApi {
         timezone: 'America/Lima',
         onTime: 6,
         late: 0,
-        absent: 0,
-        justified: 0,
-        unresolved: 22,
-        totalCompleted: 9,
+        absent: 24,
+        totalCompleted: 10,
         totalRehearsals: 10,
-        completedRehearsals: 9,
-        totalMembers: 7,
-        totalRecords: 28,
-        attendanceRate: 1,
+        completedRehearsals: 10,
+        totalMembers: 9,
+        totalRecords: 30,
+        attendanceRate: 0.2,
         punctualityRate: 1,
       ),
       nextRehearsal: Rehearsal(
@@ -258,7 +255,6 @@ class _FakeDashboardApi extends DashboardApi {
         onTime: 2,
         late: 1,
         absent: 1,
-        justified: 0,
         totalCompleted: 4,
         attendanceRate: 0.75,
         punctualityRate: 0.5,

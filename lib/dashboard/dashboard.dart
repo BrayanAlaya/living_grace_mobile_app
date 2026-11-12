@@ -174,9 +174,7 @@ class MonthlyAttendance {
     required this.onTime,
     required this.late,
     required this.absent,
-    required this.justified,
     this.timezone = '',
-    this.unresolved = 0,
     this.totalCompleted = 0,
     this.totalRehearsals,
     this.completedRehearsals,
@@ -191,8 +189,6 @@ class MonthlyAttendance {
   final int onTime;
   final int late;
   final int absent;
-  final int justified;
-  final int unresolved;
   final int totalCompleted;
 
   /// Solo llega en `ministry_attendance` (administrador).
@@ -209,11 +205,9 @@ class MonthlyAttendance {
     return MonthlyAttendance(
       month: json['month'] as String? ?? '',
       timezone: (json['timezone'] as String?)?.trim() ?? '',
-      onTime: _asInt(json['on_time']),
-      late: _asInt(json['late']),
-      absent: _asInt(json['absent']),
-      justified: _asInt(json['justified']),
-      unresolved: _asInt(json['unresolved'] ?? 0),
+      onTime: _asInt(json['on_time'] ?? 0),
+      late: _asInt(json['late'] ?? 0),
+      absent: _asInt(json['absent'] ?? 0),
       totalCompleted: _asInt(
         json['total_completed_assigned_rehearsals'] ??
             json['completed_rehearsals'] ??

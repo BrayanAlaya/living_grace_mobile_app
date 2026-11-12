@@ -149,15 +149,13 @@ void main() {
       },
       'monthly_attendance': {
         'month': '2026-11',
-        'timezone': 'America/Bogota',
-        'total_completed_assigned_rehearsals': 4,
-        'on_time': 2,
-        'late': 1,
-        'absent': 1,
-        'justified': 0,
-        'unresolved': 0,
-        'attendance_rate': 0.75,
-        'punctuality_rate': 0.5,
+        'timezone': 'America/Lima',
+        'total_completed_assigned_rehearsals': 10,
+        'on_time': 6,
+        'late': 0,
+        'absent': 4,
+        'attendance_rate': 60.0,
+        'punctuality_rate': 100.0,
       },
       'recent_attendance': [
         {
@@ -191,18 +189,20 @@ void main() {
     expect(snapshot.recentAttendance.single.displayDate, DateTime(2026, 11, 8));
     expect(snapshot.nextRehearsal?.name, 'Ensayo General');
     expect(snapshot.nextRehearsal?.id, 11);
-    expect(snapshot.monthly?.onTime, 2);
-    expect(snapshot.monthly?.timezone, 'America/Bogota');
-    expect(snapshot.monthly?.totalCompleted, 4);
-    expect(snapshot.monthly?.unresolved, 0);
-    expect(snapshot.monthly?.attendanceRate, 0.75);
+    expect(snapshot.monthly?.onTime, 6);
+    expect(snapshot.monthly?.late, 0);
+    expect(snapshot.monthly?.absent, 4);
+    expect(snapshot.monthly?.timezone, 'America/Lima');
+    expect(snapshot.monthly?.totalCompleted, 10);
+    expect(snapshot.monthly?.isMinistry, isFalse);
+    expect(snapshot.monthly?.attendanceRate, 0.6);
+    expect(snapshot.monthly?.punctualityRate, 1);
     expect(
       MonthlyAttendance.fromJson({
         'month': '2026-11',
         'on_time': 4,
         'late': 0,
         'absent': 0,
-        'justified': 0,
         'attendance_rate': 100,
         'punctuality_rate': 100,
       }).attendanceRate,
@@ -214,7 +214,6 @@ void main() {
         'on_time': 4,
         'late': 0,
         'absent': 0,
-        'justified': 0,
         'attendance_rate': 100,
         'punctuality_rate': 80,
       }).punctualityRate,
@@ -240,15 +239,13 @@ void main() {
         'month': '2026-11',
         'timezone': 'America/Lima',
         'total_rehearsals': 10,
-        'completed_rehearsals': 9,
-        'total_members': 7,
-        'total_attendance_records': 28,
+        'completed_rehearsals': 10,
+        'total_members': 9,
+        'total_attendance_records': 30,
         'on_time': 6,
         'late': 0,
-        'absent': 0,
-        'justified': 0,
-        'unresolved': 22,
-        'attendance_rate': 100.0,
+        'absent': 24,
+        'attendance_rate': 20.0,
         'punctuality_rate': 100.0,
       },
       'recent_attendance': [],
@@ -260,13 +257,13 @@ void main() {
     expect(snapshot.monthly?.isMinistry, isTrue);
     expect(snapshot.monthly?.timezone, 'America/Lima');
     expect(snapshot.monthly?.totalRehearsals, 10);
-    expect(snapshot.monthly?.completedRehearsals, 9);
-    expect(snapshot.monthly?.totalCompleted, 9);
-    expect(snapshot.monthly?.totalMembers, 7);
-    expect(snapshot.monthly?.totalRecords, 28);
+    expect(snapshot.monthly?.completedRehearsals, 10);
+    expect(snapshot.monthly?.totalCompleted, 10);
+    expect(snapshot.monthly?.totalMembers, 9);
+    expect(snapshot.monthly?.totalRecords, 30);
     expect(snapshot.monthly?.onTime, 6);
-    expect(snapshot.monthly?.unresolved, 22);
-    expect(snapshot.monthly?.attendanceRate, 1);
+    expect(snapshot.monthly?.absent, 24);
+    expect(snapshot.monthly?.attendanceRate, 0.2);
     expect(snapshot.monthly?.punctualityRate, 1);
   });
 
